@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import "./login.css";
 
@@ -87,7 +88,7 @@ export default function LoginPage() {
           </PrimaryButton>
         </form>
         <div className="signUpLink">
-          Don&apos;t have an account? <a href="/create-account">Sign up</a>
+          Don&apos;t have an account? <Link href="/create-account-step-1">Sign up</Link>
         </div>
       </div>
     </div>
