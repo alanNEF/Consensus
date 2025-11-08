@@ -5,18 +5,18 @@ CREATE EXTENSION IF NOT EXISTS vector;
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT UNIQUE NOT NULL,
-  name TEXT,
+  name TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   topics TEXT[],
   race TEXT,
-  residency TEXT,
+  residency TEXT NOT NULL,
   religion TEXT,
   gender TEXT,
   age_range TEXT,
-  party TEXT,
-  income TEXT,
-  education TEXT
+  party TEXT ,
+  income TEXT ,
+  education TEXT 
 );
 
 -- Bills table
@@ -24,11 +24,11 @@ CREATE TABLE IF NOT EXISTS bills (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
   summary_key TEXT,
-  date DATE,
-  status TEXT,
-  origin TEXT,
-  url TEXT,
-  sponsors TEXT[],
+  date DATE NOT NULL,
+  status TEXT NOT NULL,
+  origin TEXT NOT NULL,
+  url TEXT NOT NULL,
+  sponsors TEXT[] NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
