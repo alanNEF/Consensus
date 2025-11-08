@@ -17,6 +17,11 @@ export interface User {
     education?: string | null;
 }
 
+export interface Sponsor {
+    name: string;
+    party: "REPUBLICAN" | "DEMOCRAT" | "THIRD_PARTY";
+}
+
 export interface Bill {
     id: string;
     title: string;
@@ -29,6 +34,12 @@ export interface Bill {
     bill_text: string;
     created_at: string;
     updated_at: string;
+    // Extended fields for UI
+    category?: string;
+    description?: string; // One-line description
+    summary?: string; // 5-7 sentence summary
+    affectedGroups?: string[];
+    sponsorDetails?: Sponsor[];
 }
 
 export interface BillSummary {
