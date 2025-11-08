@@ -2,14 +2,19 @@
 
 import { signIn } from "next-auth/react";
 import { useState } from "react";
-import Button from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import "./create-account.css";
 
 export default function CreateAccountPage() {
+  const router = useRouter();
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [organisation, setOrganisation] = useState("");
   const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-
+  const [password, setPassword] = useState("");
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -38,76 +43,131 @@ export default function CreateAccountPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{" "}
-            <a
-              href="/login"
-              className="font-medium text-blue-600 hover:text-blue-500"
-            >
-              sign in to your existing account
-            </a>
-          </p>
+    <div className="createAccountContainer">
+      <div className="createAccountContent">
+        {/* Back to Home screen button */}
+        <div className="backButtonContainer">
+          <Link href="/" className="backButton">
+            <span>←</span>
+            <span>Back to Home screen</span>
+          </Link>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div>
-            <label
-              htmlFor="name"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Full name
-            </label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              autoComplete="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              placeholder="John Doe"
-            />
+
+        {/* Progress Indicator */}
+        <div className="progressIndicator">
+          {/* Step 1 - Active */}
+          <div className="progressStep progressStepActive">
+            1
           </div>
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Email address
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              placeholder="you@example.com"
-            />
+          <div className="progressLine progressLineActive" />
+          {/* Step 2 - Inactive */}
+          <div className="progressStep progressStepInactive">
+            2
+          </div>
+          <div className="progressLine progressLineInactive" />
+          {/* Step 3 - Inactive */}
+          <div className="progressStep progressStepInactive">
+            3
+          </div>
+        </div>
+
+        {/* Main Form Card */}
+        <div className="formCard">
+          {/* Title and Subtitle */}
+          <div className="formHeader">
+            <h1 className="formTitle">
+              Create your account
+            </h1>
+            <p className="formSubtitle">
+              Begin by providing your name and email address.
+            </p>
           </div>
 
-          {error && (
-            <div className="text-red-600 text-sm text-center">{error}</div>
-          )}
+          <form onSubmit={handleSubmit}>
+            {/* First Name and Last Name - Side by Side */}
+            <div className="nameFieldsContainer">
+              <div>
+                <label htmlFor="firstName" className="formLabel">
+                  Your first name
+                </label>
+                <input
+                  id="firstName"
+                  name="firstName"
+                  type="text"
+                  autoComplete="given-name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="formInput"
+                  placeholder="Nathan"
+                />
+              </div>
+              <div>
+                <label htmlFor="lastName" className="formLabel">
+                  Your last name
+                </label>
+                <input
+                  id="lastName"
+                  name="lastName"
+                  type="text"
+                  autoComplete="family-name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="formInput"
+                  placeholder="Gelfand"
+                />
+              </div>
+            </div>
+            {/* Email */}
+            <div className="formGroup">
+              <label htmlFor="email" className="formLabel">
+                Email
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="formInput"
+                placeholder="nathangelfand@consensus.com"
+              />
+            </div>
 
-          <div>
-            <Button
+            {/* Password */}
+            <div className="formGroup">
+              <label htmlFor="password" className="formLabel">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="formInput"
+                placeholder="Enter your password"
+              />
+            </div>
+
+            {/* Error Message */}
+            {error && <div className="errorMessage">{error}</div>}
+
+            {/* Send me verification Code Button */}
+            <button
               type="submit"
-              className="w-full"
               disabled={isLoading}
-              size="lg"
+              className="submitButton"
             >
-              {isLoading ? "Creating account..." : "Create account"}
-            </Button>
-          </div>
-        </form>
+              <span>Personalize my experience</span>
+            </button>
+
+
+          </form>
+        </div>
       </div>
     </div>
   );
