@@ -103,6 +103,25 @@ export async function getBills(
   };
 }
 
+export async function getBillsWithLimit(limit: number): Promise<Bill[]> {
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("bills")
+    .select("*")
+    .order("date", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("Error fetching bills with limit:", error);
+    return [];
+  }
+
+  return (data || []) as Bill[];
+}
+
 export async function getBillById(billId: string): Promise<Bill | null> {
   if (!supabase) {
     return null;

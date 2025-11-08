@@ -70,7 +70,7 @@ export async function generateBillSummaryOpenRouter(
         },
       },
     });
-
+    console.log(message.choices[0].message.content);
     return message.choices[0].message.content as string;
   } catch (error) {
     console.error("Error generating OpenRouter summary:", error);
