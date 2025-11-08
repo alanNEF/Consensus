@@ -31,7 +31,6 @@ export interface Bill {
     origin: string | null;
     url: string | null;
     sponsors: string[] | null;
-    bill_text: string;
     created_at: string;
     updated_at: string;
     // Extended fields for UI
@@ -46,6 +45,13 @@ export interface BillSummary {
     id: string;
     bill_id: string;
     summary_text: string;
+    created_at: string;
+}
+
+export interface Endorsement {
+    id: string;
+    user_id: string;
+    bill_id: string;
     created_at: string;
 }
 

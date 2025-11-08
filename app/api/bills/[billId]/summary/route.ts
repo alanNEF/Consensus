@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { getBillById, getBillSummary, insertBillSummary } from "@/lib/supabase";
-import { generateBillSummaryOpenRouter } from "@/lib/ai/openrouter";
+import { getBillById, getBillSummary } from "@/lib/supabase";
+import { generateBillSummary } from "@/lib/ai/openai";
+import { generateBillSummaryAnthropic } from "@/lib/ai/anthropic";
 
 export async function POST(
   request: Request,
@@ -29,10 +30,23 @@ export async function POST(
 
     // Generate summary using OpenAI (preferred) or Anthropic
     const billText = bill.title + (bill.summary_key || "");
-    const summary = await generateBillSummaryOpenRouter(billText, bill.title);
+    let summary: string;
 
-    // Save summary to database
-    await insertBillSummary(billId, summary);
+    if (process.env.OPENAI_API_KEY) {
+      summary = await generateBillSummary(billText, bill.title);
+    } else if (process.env.ANTHROPIC_API_KEY) {
+      summary = await generateBillSummaryAnthropic(billText, bill.title);
+    } else {
+      // Return placeholder if no AI keys are configured
+      summary = `[PLACEHOLDER SUMMARY] This is a placeholder AI summary for "${bill.title}". 
+
+To enable AI summaries, please configure either OPENAI_API_KEY or ANTHROPIC_API_KEY in your environment variables.
+
+The actual summary would provide a clear, accessible explanation of what this bill does, who it affects, and why it matters.`;
+    }
+
+    // TODO: Save summary to database
+    // await saveBillSummary(billId, summary);
 
     return NextResponse.json({
       summary,
