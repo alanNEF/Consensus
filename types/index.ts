@@ -37,13 +37,6 @@ export interface BillSummary {
     created_at: string;
 }
 
-export interface Endorsement {
-    id: string;
-    user_id: string;
-    bill_id: string;
-    created_at: string;
-}
-
 export interface SavedBill {
     id: string;
     user_id: string;

@@ -11,12 +11,12 @@ const openrouter = new OpenRouter({
  * @param billTitle - The title of the bill
  * @returns A human-friendly summary of the bill
  */
-export async function generateBillSummaryAnthropic(
+export async function generateBillSummaryOpenRouter(
   billText: string,
   billTitle: string
 ): Promise<string> {
   if (!openrouter) {
-    throw new Error("Anthropic API key not configured");
+    throw new Error("OpenRouter API key not configured");
   }
 
   try {
@@ -56,7 +56,7 @@ export async function generateBillSummaryAnthropic(
 
     return message.choices[0].message.content as string;
   } catch (error) {
-    console.error("Error generating Anthropic summary:", error);
+    console.error("Error generating OpenRouter summary:", error);
     throw error;
   }
 }
