@@ -47,8 +47,11 @@ if (!supabaseUrl || !supabaseServiceKey) {
   );
 }
 
-export function assembleLink(bill:CongressBill): string {
-  return `https://www.congress.gov/bill/${bill.congress}th-congress/${bill.originChamber}-bill/${bill.number}`;
+export function assembleLink(bill: Bill): string {
+  const year = bill.date?.split("-")[0];
+  const origin = bill.origin?.toLowerCase();
+  const id = bill.id;
+  return `https://www.congress.gov/bill/${year}th-congress/${origin}-bill/${id}`;
 }
 
 // Create server client with service role key (bypasses RLS)
@@ -164,6 +167,25 @@ export async function getUserSavedBills(userId: string): Promise<SavedBill[]> {
   }
 
   return (data || []) as SavedBill[];
+}
+
+export async function getBillsByCategory(category: string, count: number = 15): Promise<Bill[]> {
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("bills")
+    .select("*")
+    .eq("category", category)
+    .order("date", { ascending: false })
+    .limit(count);
+
+  if (error) {
+    console.error("Error fetching bills by category:", error);
+    return [];
+  }
+  return (data || []) as Bill[];
 }
 
 export async function getAllBills(): Promise<Bill[]> {

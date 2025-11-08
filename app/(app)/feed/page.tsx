@@ -48,18 +48,18 @@ export default function FeedPage() {
   // Initialize arrow states and set up scroll listeners
   useEffect(() => {
     const cleanupFunctions: (() => void)[] = [];
-    
+
     // Small delay to ensure containers are rendered
     const timeoutId = setTimeout(() => {
       categories.forEach((category) => {
         const container = scrollRefs.current[category];
         if (container) {
           updateArrowStates(category);
-          
+
           const handleScroll = () => {
             updateArrowStates(category);
           };
-          
+
           container.addEventListener("scroll", handleScroll);
           cleanupFunctions.push(() => {
             container.removeEventListener("scroll", handleScroll);
@@ -67,7 +67,7 @@ export default function FeedPage() {
         }
       });
     }, 100);
-    
+
     return () => {
       clearTimeout(timeoutId);
       cleanupFunctions.forEach((cleanup) => cleanup());
@@ -85,20 +85,20 @@ export default function FeedPage() {
       delete newState[category];
       return newState;
     });
-    
+
     // Wait for width transition (0.3s) before scrolling for accurate calculations
     setTimeout(() => {
       const cardWidth = 280; // Card width in pixels
       const scrollAmount = cardWidth * 4 + 64; // Scroll by exactly 4 cards (4 cards + 3 gaps between them)
       const newScrollLeft = container.scrollLeft - scrollAmount;
-      
+
       // Only scroll if not at the beginning
       if (newScrollLeft > 0) {
         container.scrollBy({ left: -scrollAmount, behavior: "smooth" });
       } else {
         container.scrollTo({ left: 0, behavior: "smooth" });
       }
-      
+
       // Update arrow states after scroll
       setTimeout(() => updateArrowStates(category), 350);
     }, 300); // Wait for 0.3s transition to complete
@@ -114,21 +114,21 @@ export default function FeedPage() {
       delete newState[category];
       return newState;
     });
-    
+
     // Wait for width transition (0.3s) before scrolling for accurate calculations
     setTimeout(() => {
       const cardWidth = 280; // Card width in pixels
       const scrollAmount = cardWidth * 4 + 64; // Scroll by exactly 4 cards (4 cards + 3 gaps between them)
       const maxScroll = container.scrollWidth - container.clientWidth;
       const newScrollLeft = container.scrollLeft + scrollAmount;
-      
+
       // Only scroll if not at the end
       if (newScrollLeft < maxScroll) {
         container.scrollBy({ left: scrollAmount, behavior: "smooth" });
       } else {
         container.scrollTo({ left: maxScroll, behavior: "smooth" });
       }
-      
+
       // Update arrow states after scroll
       setTimeout(() => updateArrowStates(category), 350);
     }, 300); // Wait for 0.3s transition to complete
