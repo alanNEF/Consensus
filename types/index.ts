@@ -51,6 +51,7 @@ export interface Endorsement {
     id: string;
     user_id: string;
     bill_id: string;
+    endorsed: boolean;
     created_at: string;
 }
 

@@ -1,5 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Bill, BillSummary, Endorsement, SavedBill, User } from "@/types";
+import { CongressBill } from "./congress/clients";
+import { config } from "dotenv";
+import path from "path";
+
+config({ path: path.join(process.cwd(), ".env") });
 import { generateBillSummaryOpenRouter } from "./ai/openrouter";
 import type { Database } from "./database.types";
 
@@ -10,7 +15,10 @@ export interface SupabaseDatabase {
     Tables: {
       users: {
         Row: User;
-        Insert: Omit<User, "id" | "created_at" | "updated_at" | "topics" | "race" | "religion" | "gender" | "age_range" | "party" | "income" | "education">;
+        // residency is required (NOT NULL), so it should be in Insert
+        Insert: Omit<User, "id" | "created_at" | "updated_at" | "topics" | "race" | "religion" | "gender" | "age_range" | "party" | "income" | "education"> & {
+          residency: string; // Required field
+        };
         Update: Partial<Omit<User, "id" | "created_at" | "updated_at">>;
       };
       bills: {
@@ -23,15 +31,18 @@ export interface SupabaseDatabase {
         Insert: {
           bill_id: string;
           summary_text: string;
+          // id and created_at are auto-generated, so they're correctly omitted
         };
         Update: Partial<{
+          id?: string;
           bill_id: string;
           summary_text: string;
+          created_at?: string;
         }>;
       };
       saved_bills: {
-        Row: SavedBill;
-        Insert: Omit<SavedBill, "id" | "created_at">;
+        Row: SavedBill; // Add endorsed field
+        Insert: Omit<SavedBill, "id" | "created_at">; // endorsed is optional due to default
         Update: Partial<Omit<SavedBill, "id" | "created_at">>;
       };
     };
@@ -39,14 +50,12 @@ export interface SupabaseDatabase {
 }
 
 // Server-side Supabase client (uses service role key)
-// TODO: Replace with your Supabase URL and service role key
-const supabaseUrl = process.env.SUPABASE_URL || "";
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
 
 if (!supabaseUrl || !supabaseServiceKey) {
-  console.warn(
-    "⚠️  Supabase credentials not configured. Database operations will be mocked."
-  );
+    throw new Error("Supabase credentials not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY");
 }
 
 // Create server client with service role key (bypasses RLS)
@@ -62,8 +71,8 @@ export const supabase = supabaseUrl && supabaseServiceKey
 // Client-side Supabase client (uses anon key)
 // This should only be used in client components
 export function createClientSupabase() {
-  const clientSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || supabaseUrl;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+  const clientSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!clientSupabaseUrl || !supabaseAnonKey) {
     throw new Error("Supabase client credentials not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY");
   }
@@ -77,11 +86,7 @@ export async function getBills(
   pageSize: number = 20
 ): Promise<{ data: Bill[]; total: number }> {
   if (!supabase) {
-    // Return mock data if Supabase is not configured
-    return {
-      data: [],
-      total: 0,
-    };
+    throw new Error("Supabase client not configured");
   }
 
   const from = (page - 1) * pageSize;
@@ -220,6 +225,260 @@ export async function getBillsByCategory(category: string, count: number = 15): 
   }
   return (data || []) as Bill[];
 }
+  
+//Inserts the bill as endorse by the user, if they are opposing it it will change to endorsing
+export async function userEndorseBill(userId: string, billId: string): Promise<void> {
+  if (!supabase) {
+    throw new Error("Supabase client not configured");
+  }
+
+  const { error } = await supabase
+    .from("saved_bills")
+    .upsert({ user_id: userId, bill_id: billId, endorsed: true } as any, { onConflict: "user_id,bill_id" } as any);
+}
+
+//Inserts the bill as opposed by the user, if they are endorsing it it will change to opposed
+export async function userOpposeBill(userId: string, billId: string): Promise<void> {
+  if (!supabase) {
+    throw new Error("Supabase client not configured");
+  }
+
+  const { error } = await supabase
+    .from("saved_bills")
+    .upsert({ user_id: userId, bill_id: billId, endorsed: false } as any, { onConflict: "user_id,bill_id" } as any);
+}
+
+//Removes the user's support/opposition for the bill
+export async function userRemoveBillOpinion(userId: string, billId: string): Promise<void> {
+  if (!supabase) {
+    throw new Error("Supabase client not configured");
+  }
+
+  const { error } = await supabase
+    .from("saved_bills")
+    .delete().eq("user_id", userId).eq("bill_id", billId);
+}
+
+/**
+ * Get demographics of all users who endorse a specific bill
+ * Returns saved_bills records with joined user demographic data
+ */
+export async function getBillEndorsementDemographics(billId: string): Promise<Array<SavedBill & { user: Pick<User, "race" | "religion" | "gender" | "age_range" | "party" | "income" | "education" | "residency" | "topics"> }>> {
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("saved_bills")
+    .select(`
+      *,
+      users (
+        race,
+        religion,
+        gender,
+        age_range,
+        party,
+        income,
+        education,
+        residency,
+        topics
+      )
+    `)
+    .eq("bill_id", billId)
+    .eq("endorsed", true);
+
+  if (error) {
+    console.error("Error fetching bill endorsement demographics:", error);
+    return [];
+  }
+
+  // Transform the data to match expected structure
+  return (data || []).map((item: any) => ({
+    id: item.id,
+    user_id: item.user_id,
+    bill_id: item.bill_id,
+    endorsed: item.endorsed,
+    created_at: item.created_at,
+    user: item.users || {},
+  })) as Array<SavedBill & { user: Pick<User, "race" | "religion" | "gender" | "age_range" | "party" | "income" | "education" | "residency" | "topics"> }>;
+}
+
+/**
+ * Get count of each demographic category for users who endorse a bill
+ * Returns an object with counts for each demographic field
+ */
+export async function getBillEndorsementDemographicsCount(billId: string): Promise<Record<string, Record<string, number>>> {
+  const demographics = await getBillEndorsementDemographics(billId);
+  
+  // Initialize counts object for each demographic field
+  const counts: Record<string, Record<string, number>> = {
+    race: {},
+    religion: {},
+    gender: {},
+    age_range: {},
+    party: {},
+    income: {},
+    education: {},
+    residency: {},
+    topics: {},
+  };
+
+  // Count each demographic category
+  demographics.forEach((item) => {
+    const user = item.user;
+    
+    // Count single-value demographics
+    const singleValueFields = [
+      "race",
+      "religion",
+      "gender",
+      "age_range",
+      "party",
+      "income",
+      "education",
+      "residency",
+    ] as const;
+
+    singleValueFields.forEach((field) => {
+      const value = user[field];
+      if (value && typeof value === "string") {
+        counts[field][value] = (counts[field][value] || 0) + 1;
+      }
+    });
+
+    // Count topics (array field)
+    if (user.topics && Array.isArray(user.topics)) {
+      user.topics.forEach((topic) => {
+        if (topic) {
+          counts.topics[topic] = (counts.topics[topic] || 0) + 1;
+        }
+      });
+    }
+  });
+
+  return counts;
+}
+
+export async function getBillOppositionDemographics(billId: string): Promise<Array<SavedBill & { user: Pick<User, "race" | "religion" | "gender" | "age_range" | "party" | "income" | "education" | "residency" | "topics"> }>> {
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("saved_bills")
+    .select(`
+      *,
+      users (
+        race,
+        religion,
+        gender,
+        age_range,
+        party,
+        income,
+        education,
+        residency,
+        topics
+      )
+    `)
+    .eq("bill_id", billId)
+    .eq("endorsed", false);
+
+  if (error) {
+    console.error("Error fetching bill endorsement demographics:", error);
+    return [];
+  }
+
+  // Transform the data to match expected structure
+  return (data || []).map((item: any) => ({
+    id: item.id,
+    user_id: item.user_id,
+    bill_id: item.bill_id,
+    endorsed: item.endorsed,
+    created_at: item.created_at,
+    user: item.users || {},
+  })) as Array<SavedBill & { user: Pick<User, "race" | "religion" | "gender" | "age_range" | "party" | "income" | "education" | "residency" | "topics"> }>;
+}
+
+/**
+ * Get count of each demographic category for users who endorse a bill
+ * Returns an object with counts for each demographic field
+ */
+export async function getBillOppositionDemographicsCount(billId: string): Promise<Record<string, Record<string, number>>> {
+  const demographics = await getBillOppositionDemographics(billId);
+  
+  // Initialize counts object for each demographic field
+  const counts: Record<string, Record<string, number>> = {
+    race: {},
+    religion: {},
+    gender: {},
+    age_range: {},
+    party: {},
+    income: {},
+    education: {},
+    residency: {},
+    topics: {},
+  };
+
+  // Count each demographic category
+  demographics.forEach((item) => {
+    const user = item.user;
+    
+    // Count single-value demographics
+    const singleValueFields = [
+      "race",
+      "religion",
+      "gender",
+      "age_range",
+      "party",
+      "income",
+      "education",
+      "residency",
+    ] as const;
+
+    singleValueFields.forEach((field) => {
+      const value = user[field];
+      if (value && typeof value === "string") {
+        counts[field][value] = (counts[field][value] || 0) + 1;
+      }
+    });
+
+    // Count topics (array field)
+    if (user.topics && Array.isArray(user.topics)) {
+      user.topics.forEach((topic) => {
+        if (topic) {
+          counts.topics[topic] = (counts.topics[topic] || 0) + 1;
+        }
+      });
+    }
+  });
+
+  return counts;
+}
+
+
+export async function getBillSponsors(billId: string): Promise<string[]> {
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("bills")
+    .select("sponsors")
+    .eq("id", billId)
+    .single();
+
+  if (error) {
+    console.error("Error fetching bill sponsors:", error);
+    return [];
+  }
+
+  // Extract sponsors array from the result object
+  // data will be { sponsors: string[] } or null
+  const result = data as { sponsors: string[] } | null;
+  return result?.sponsors || [];
+}
+
+
 
 export async function getAllBills(): Promise<Bill[]> {
   if (!supabase) {
@@ -239,47 +498,35 @@ export async function getAllBills(): Promise<Bill[]> {
   return (data || []) as Bill[];
 }
 
-// export async function updateUserDemographics(userId: string, demographics: Demographics): Promise<void> {
-//   if (!supabase) {
-//     return;
-//   }
-//   const updatePayload:Demographics = {
-//     residency: demographics.residency,
-//     topics: demographics.topics,
-//     race: demographics.race,
-//     religion: demographics.religion,
-//     gender: demographics.gender,
-//     age_range: demographics.age_range,
-//     party: demographics.party,
-//     income: demographics.income,
-//     education: demographics.education,
-//   };
+export async function getBillsByCategory(): Promise<Record<string, Bill[]>> {
+  if (!supabase) {
+    return {};
+  }
 
-  
+  // TODO: Add category field to bills table or filter by category if it exists
+  const { data, error } = await supabase
+    .from("bills")
+    .select("*")
+    .order("date", { ascending: false });
 
-//   const { data, error } = await supabase
-//     .from("users")
-//     .update(updatePayload as never)
-//     .eq("id", userId)
+  if (error) {
+    console.error("Error fetching bills by category:", error);
+    return {};
+  }
 
-//   if (error) {
-//     console.error("Error updating user demographics:", error);
-//     return;
-//   }
+  const bills = (data || []) as Bill[];
+  const byCategory: Record<string, Bill[]> = {};
 
-//   return;
-// }
+  bills.forEach((bill) => {
+    const category = bill.category || "Uncategorized";
+    if (!byCategory[category]) {
+      byCategory[category] = [];
+    }
+    byCategory[category].push(bill);
+  });
 
-// export async function updateUserRace(userId: string, race: string): Promise<void> {
-//   if (!supabase) {
-//     return "error";
-//   }
-//   const { data, error } = await supabase
-//     .from("users")
-//     .update({ race: race } as never)
-//     .eq("id", userId)
-// }
-
+  return byCategory;
+}
 
 export async function insertBillSummary(
   billId: string,
@@ -308,6 +555,71 @@ export async function insertBillSummary(
   }
   await updateBillWithSummaryKey(billId, (data as BillSummary).id);
   return data as BillSummary;
+}
+
+/**
+ * Assembles a Congress.gov URL from a bill object
+ * Handles bill ID formats:
+ * - Format 1: "{congress}_{type}_{number}" (e.g., "118_hr_1234")
+ * - Format 2: "{type}{number}-{congress}" (e.g., "hr1234-118")
+ * 
+ * Falls back to bill.url if available, or returns a generic error URL if parsing fails
+ */
+export function assembleLink(bill: Bill): string {
+  // If bill already has a URL, use it
+  if (bill.url) {
+    return bill.url;
+  }
+
+  // Validate required fields
+  if (!bill.id) {
+    console.error("assembleLink: bill.id is missing");
+    return "https://www.congress.gov/";
+  }
+
+  if (!bill.origin) {
+    console.error("assembleLink: bill.origin is missing for bill", bill.id);
+    return "https://www.congress.gov/";
+  }
+
+  try {
+    // Try format 1: "{congress}_{type}_{number}"
+    if (bill.id.includes("_")) {
+      const parts = bill.id.split("_");
+      if (parts.length >= 3) {
+        const congress = parts[0];
+        const billNumber = parts[2];
+        const origin = bill.origin.toLowerCase();
+        return `https://www.congress.gov/bill/${congress}th-congress/${origin}-bill/${billNumber}`;
+      }
+    }
+
+    // Try format 2: "{type}{number}-{congress}" (e.g., "hr1234-118", "s5678-118")
+    if (bill.id.includes("-")) {
+      const parts = bill.id.split("-");
+      if (parts.length >= 2) {
+        const congress = parts[parts.length - 1]; // Last part is congress
+        const prefix = parts[0]; // First part is type + number (e.g., "hr1234")
+        
+        // Extract bill number by removing type prefix (hr, s, hres, sres, etc.)
+        const billNumberMatch = prefix.match(/\d+$/);
+        if (billNumberMatch) {
+          const billNumber = billNumberMatch[0];
+          const origin = bill.origin.toLowerCase();
+          return `https://www.congress.gov/bill/${congress}th-congress/${origin}-bill/${billNumber}`;
+        }
+      }
+    }
+
+    // If we can't parse the format, log error and return generic URL
+    console.error(
+      `assembleLink: Unable to parse bill ID format: "${bill.id}". Expected format: "{congress}_{type}_{number}" or "{type}{number}-{congress}"`
+    );
+    return "https://www.congress.gov/";
+  } catch (error) {
+    console.error("assembleLink: Error assembling link for bill", bill.id, error);
+    return "https://www.congress.gov/";
+  }
 }
 
 export async function updateBillWithSummaryKey(billId: string, summaryKey: string): Promise<Bill | null> {
