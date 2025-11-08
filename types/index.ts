@@ -35,8 +35,7 @@ export interface Bill {
     updated_at: string;
     // Extended fields for UI
     category?: string;
-    description?: string; // One-line description
-    summary?: string; // 5-7 sentence summary
+    bill_text: string;
     affectedGroups?: string[];
     sponsorDetails?: Sponsor[];
 }
@@ -60,10 +59,6 @@ export interface SavedBill {
     user_id: string;
     bill_id: string;
     created_at: string;
-}
-
-export interface BillWithSummary extends Bill {
-    summary?: BillSummary;
 }
 
 export interface PaginatedResponse<T> {
