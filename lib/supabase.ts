@@ -71,7 +71,7 @@ export function createClientSupabase() {
 }
 
 // Type-safe query helpers
-
+// Bills table
 export async function getBills(
   page: number = 1,
   pageSize: number = 20
@@ -181,6 +181,25 @@ export async function getUserSavedBills(userId: string): Promise<SavedBill[]> {
   }
 
   return (data || []) as SavedBill[];
+}
+
+export async function getBillsByCategory(category: string, count: number = 15): Promise<Bill[]> {
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("bills")
+    .select("*")
+    .eq("category", category)
+    .order("date", { ascending: false })
+    .limit(count);
+
+  if (error) {
+    console.error("Error fetching bills by category:", error);
+    return [];
+  }
+  return (data || []) as Bill[];
 }
 
 export async function getAllBills(): Promise<Bill[]> {
