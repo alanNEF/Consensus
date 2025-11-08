@@ -1,13 +1,16 @@
 """
-Recommendation script: performs vector similarity search to recommend bills
+Recommendation script: performs vector similarity search to recommend bills.
+
+Also provides classification functions used during bill ingestion.
 """
 
 import os
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
-from typing import List, Dict, Any, Optional
-import json
+from typing import List, Dict, Any, Tuple
+import numpy as np
+from transformers import pipeline
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
@@ -19,7 +22,6 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 EMBED_MODEL = os.getenv("EMBED_MODEL", "text-embedding-3-small")
-DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Check if required env vars are set
 if not SUPABASE_URL or SUPABASE_URL == "replace_me":
@@ -33,6 +35,67 @@ if not SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SERVICE_ROLE_KEY == "replace_me":
 if not OPENAI_API_KEY or OPENAI_API_KEY == "replace_me":
     print("⚠️  OPENAI_API_KEY not configured. Using mock embeddings.")
     OPENAI_API_KEY = None
+
+# Bill classification categories
+CANDIDATE_LABELS = [
+    'Health', 'Environment', 'Armed Services', 'Economy', 'Education', 
+    'Technology', 'Immigration', 'Agriculture + Food', 'Government Operations', 
+    'Taxation', 'Civil Rights', 'Criminal Justice'
+]
+
+# Initialize classifier (lazy loading)
+_classifier = None
+
+
+def get_classifier():
+    """Get or initialize the zero-shot classifier"""
+    global _classifier
+    if _classifier is None:
+        _classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+    return _classifier
+
+
+def softmax(x: np.ndarray) -> np.ndarray:
+    """Compute softmax values for each sets of scores in x."""
+    e_x = np.exp(x - np.max(x))
+    return e_x / e_x.sum(axis=0)
+
+
+def classify_bill_text(text: str, threshold_std: float = 0.5) -> List[Tuple[str, float]]:
+    """
+    Classify bill text into categories using zero-shot classification.
+    
+    Args:
+        text: The bill text to classify
+        threshold_std: Number of standard deviations above mean to use as threshold (default: 0.5)
+    
+    Returns:
+        List of tuples (label, score) for categories that meet the threshold
+    """
+    classifier = get_classifier()
+    
+    # Perform classification
+    return_value = classifier(text, CANDIDATE_LABELS, multi_label=True)
+    
+    # Get scores and apply softmax
+    scores = np.array(return_value["scores"])
+    softmax_scores = softmax(scores)
+    
+    # Calculate threshold
+    mean_score = np.mean(softmax_scores)
+    std_dev = np.std(softmax_scores)
+    threshold = mean_score + (threshold_std * std_dev)
+    
+    # Filter results
+    top_results = []
+    for i in range(len(softmax_scores)):
+        if softmax_scores[i] >= threshold:
+            top_results.append((return_value['labels'][i], float(softmax_scores[i])))
+    
+    # Sort by score (descending)
+    top_results.sort(key=lambda x: x[1], reverse=True)
+    
+    return top_results
 
 
 def generate_embedding(text: str) -> List[float]:
@@ -130,7 +193,7 @@ def main():
     """Main recommendation function"""
     import argparse
 
-    parser = argparse.ArgumentParser(description="Recommend bills using vector similarity")
+    parser = argparse.ArgumentParser(description="Recommend bills using vector similarity search")
     parser.add_argument(
         "--query",
         type=str,
@@ -150,6 +213,7 @@ def main():
 
     args = parser.parse_args()
 
+    # Handle recommendation requests
     if args.query:
         recommendations = recommend_bills_by_query(args.query, args.top_n)
     elif args.user_id:
