@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import type { Bill, BillSummary, Demographics, Endorsement, SavedBill, User } from "@/types";
+import type { Bill, BillSummary, Endorsement, SavedBill, User } from "@/types";
 import { generateBillSummaryOpenRouter } from "./ai/openrouter";
 import type { Database } from "./database.types";
 

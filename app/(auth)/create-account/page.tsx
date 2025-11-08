@@ -513,7 +513,6 @@ export default function CreateAccountPage() {
                                             <option value="taoism">Taoism</option>
                                             <option value="agnostic">Agnostic</option>
                                             <option value="atheist">Atheist</option>
-                                            <option value="spiritual-not-religious">Spiritual but not Religious</option>
                                             <option value="other">Other</option>
                                             <option value="prefer-not-to-say">Prefer not to say</option>
                                         </select>
