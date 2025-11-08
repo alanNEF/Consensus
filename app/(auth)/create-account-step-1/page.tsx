@@ -20,24 +20,21 @@ export default function CreateAccountPage() {
     setIsLoading(true);
     setError("");
 
+    // Basic validation
+    if (!firstName || !lastName || !email || !password) {
+      setError("Please fill in all required fields.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       // TODO: Implement actual account creation
-      // For now, just sign in with email
-      const result = await signIn("email", {
-        email,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        setError("Failed to create account. Please try again.");
-      } else {
-        alert(
-          "Check your email for a magic link to complete sign up. (Note: This is a stub - configure SMTP for actual email delivery)"
-        );
-      }
+      // For now, redirect to step 2
+      setTimeout(() => {
+        router.push("/create-account-step-2");
+      }, 300);
     } catch (err) {
       setError("An error occurred. Please try again.");
-    } finally {
       setIsLoading(false);
     }
   };
