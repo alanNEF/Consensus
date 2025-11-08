@@ -1,0 +1,264 @@
+.createAccountContainer {
+    min-height: 100vh;
+    background: #1a1a1a;
+    padding: 2rem 1rem;
+    position: relative;
+}
+
+.createAccountContent {
+    max-width: 600px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+
+.backButtonContainer {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.backButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background-color: #0474b6;
+    color: white;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.backButton::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.3),
+            transparent);
+    transition: left 0.5s ease;
+}
+
+.backButton:hover::before {
+    left: 100%;
+}
+
+.backButton:hover {
+    background-color: #0365a0;
+    box-shadow: 0 4px 12px rgba(4, 116, 182, 0.4);
+    transform: translateY(-1px);
+}
+
+.backButton:active {
+    transform: translateY(0);
+}
+
+.progressIndicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 3rem;
+}
+
+.progressStep {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.progressStepActive {
+    background-color: #0474b6;
+}
+
+.progressStepCompleted {
+    background-color: #0474b6;
+}
+
+.progressStepInactive {
+    background: #1a2342;
+    border: 2px solid #2a3a5a;
+    color: #9f9f9f;
+}
+
+.progressLine {
+    width: 60px;
+    height: 2px;
+}
+
+.progressLineActive {
+    background-color: #0474b6;
+}
+
+.progressLineCompleted {
+    background-color: #0474b6;
+}
+
+.progressLineInactive {
+    background: #2a3a5a;
+}
+
+.formCard {
+    background: transparent;
+    border-radius: 16px;
+    padding: 3rem;
+    box-shadow: 0 4px 20px rgba(4, 116, 182, 0.2);
+    border: 1px solid #2a3a5a;
+}
+
+.formHeader {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.formTitle {
+    font-size: 2rem;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 0.5rem;
+}
+
+.formSubtitle {
+    font-size: 1rem;
+    color: #9f9f9f;
+}
+
+.nameFieldsContainer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.formGroup {
+    margin-bottom: 1.5rem;
+}
+
+.formLabel {
+    display: block;
+    color: white;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.formInput {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #2c2c2c;
+    border: 2px solid #2a3a5a;
+    border-radius: 8px;
+    color: white;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.formInput:focus {
+    border-color: #0474b6;
+    box-shadow: 0 0 0 3px rgba(4, 116, 182, 0.1);
+}
+
+.infoMessage {
+    color: #9f9f9f;
+    font-size: 0.875rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+.errorMessage {
+    color: #ff4444;
+    font-size: 0.875rem;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.submitButton {
+    width: 100%;
+    padding: 1rem;
+    background-color: #0474b6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.submitButton::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.3),
+            transparent);
+    transition: left 0.5s ease;
+}
+
+.submitButton:hover:not(:disabled)::before {
+    left: 100%;
+}
+
+.submitButton:hover:not(:disabled) {
+    background-color: #0365a0;
+    box-shadow: 0 4px 12px rgba(4, 116, 182, 0.4);
+    transform: translateY(-1px);
+}
+
+.submitButton:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.submitButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.submitButton:disabled::before {
+    display: none;
+}
+
+.otherMethodsContainer {
+    text-align: center;
+}
+
+.otherMethodsButton {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    transition: color 0.2s;
+}
+
+.otherMethodsButton:hover {
+    color: #0474b6;
+}
