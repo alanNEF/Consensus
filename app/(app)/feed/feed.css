@@ -1,0 +1,146 @@
+.feedContainer {
+  min-height: 100vh;
+  background-color: #1a1a1a;
+  padding: 2rem 0;
+}
+
+.feedContent {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.feedHeader {
+  margin-bottom: 2rem;
+}
+
+.feedTitle {
+  font-size: 2rem;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+.feedSubtitle {
+  font-size: 1rem;
+  color: #9f9f9f;
+}
+
+.categorySection {
+  margin-bottom: 3rem;
+}
+
+.categoryTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 1rem;
+}
+
+.billRow {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  position: relative;
+}
+
+.billCardsContainer {
+  display: flex;
+  gap: 1rem;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  flex: 1;
+  padding: 0.5rem 0;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  min-width: 0; /* Allow flex shrinking */
+  width: calc(4 * 280px + 3 * 1rem); /* Exactly 4 cards: 4 cards * 280px + 3 gaps * 1rem */
+  max-width: calc(4 * 280px + 3 * 1rem);
+}
+
+.billCardsContainer::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.scrollArrow {
+  background-color: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  font-size: 1.5rem;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.scrollArrow:hover {
+  background-color: #3a3a3a;
+  border-color: #0474b6;
+}
+
+.scrollArrow:disabled,
+.scrollArrow.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  background-color: #1a1a1a;
+  border-color: #2a2a2a;
+}
+
+.scrollArrow:disabled:hover,
+.scrollArrow.disabled:hover {
+  background-color: #1a1a1a;
+  border-color: #2a2a2a;
+}
+
+.scrollArrowLeft {
+  left: 0;
+}
+
+.scrollArrowRight {
+  right: 0;
+}
+
+/* Media query for smaller screens - remove arrows and show scrollbar */
+@media (max-width: 768px) {
+  .scrollArrow {
+    display: none;
+  }
+
+  .billRow {
+    gap: 0;
+  }
+
+  .billCardsContainer {
+    overflow-x: auto;
+    width: 100%;
+    max-width: 100%;
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: #3a3a3a #1a1a1a; /* Firefox */
+  }
+
+  .billCardsContainer::-webkit-scrollbar {
+    display: block; /* Chrome, Safari, Opera */
+    height: 8px;
+  }
+
+  .billCardsContainer::-webkit-scrollbar-track {
+    background: #1a1a1a;
+    border-radius: 4px;
+  }
+
+  .billCardsContainer::-webkit-scrollbar-thumb {
+    background: #3a3a3a;
+    border-radius: 4px;
+  }
+
+  .billCardsContainer::-webkit-scrollbar-thumb:hover {
+    background: #4a4a4a;
+  }
+}
+

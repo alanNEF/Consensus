@@ -13,6 +13,10 @@ if (!supabaseUrl || !supabaseServiceKey) {
   );
 }
 
+export function assembleLink(bill:CongressBill): string {
+  return `https://www.congress.gov/bill/${bill.congress}th-congress/${bill.originChamber}-bill/${bill.number}`;
+}
+
 // Create server client with service role key (bypasses RLS)
 export const supabase = supabaseUrl && supabaseServiceKey
   ? createClient<Database>(supabaseUrl, supabaseServiceKey, {
