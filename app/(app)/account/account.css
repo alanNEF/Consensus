@@ -1,0 +1,377 @@
+.accountContainer {
+    min-height: 100vh;
+    background-color: #1a1a1a;
+    padding: 2rem 1rem;
+}
+
+.accountContent {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.accountHeader {
+    margin-bottom: 3rem;
+}
+
+.accountTitle {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 0.5rem;
+}
+
+.accountSubtitle {
+    font-size: 1rem;
+    color: #9f9f9f;
+}
+
+.accountSection {
+    background-color: #262626;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.sectionHeader {
+    margin-bottom: 1.5rem;
+}
+
+.sectionTitle {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 0.25rem;
+}
+
+.sectionSubtitle {
+    font-size: 0.9rem;
+    color: #9f9f9f;
+}
+
+.sectionContent {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.formField {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.fieldLabel {
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.fieldInput {
+    background-color: #2b2b2b;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    color: white;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.fieldInput:focus {
+    border-color: #0474b6;
+}
+
+.fieldInput:read-only {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.demographicFieldsContainer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.fieldSelect {
+    background-color: #2b2b2b;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    color: white;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+    cursor: pointer;
+}
+
+.fieldSelect:focus {
+    border-color: #0474b6;
+}
+
+.fieldSelect option {
+    background-color: #2b2b2b;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .demographicFieldsContainer {
+        grid-template-columns: 1fr;
+    }
+}
+
+.fieldHelper {
+    color: #9f9f9f;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.topicsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.75rem;
+}
+
+.topicTag {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: white;
+    white-space: nowrap;
+    background-color: rgba(58, 58, 58, 0.6);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(5px);
+}
+
+.topicTag:hover {
+    border-color: #0474b6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(4, 116, 182, 0.3);
+}
+
+.topicTag.selected {
+    border-color: #4A90E2;
+    background-color: #333333;
+}
+
+.topicTag.selected .topicCheckmark {
+    color: white;
+}
+
+.topicCheckmark {
+    margin-left: 0.5rem;
+    font-size: 1rem;
+    color: white;
+    font-weight: bold;
+}
+
+/* Category-specific tag colors matching feed */
+.topicTag.health {
+    background-color: rgba(56, 118, 29, 0.6);
+    border-color: rgba(106, 168, 79, 0.8);
+}
+
+.topicTag.health.selected {
+    background-color: rgba(56, 118, 29, 0.8);
+    border-color: #4A90E2;
+}
+
+.topicTag.environment {
+    background-color: rgba(5, 150, 105, 0.6);
+    border-color: rgba(16, 185, 129, 0.8);
+}
+
+.topicTag.environment.selected {
+    background-color: rgba(5, 150, 105, 0.8);
+    border-color: #4A90E2;
+}
+
+.topicTag.armedServices {
+    background-color: rgba(124, 58, 237, 0.6);
+    border-color: rgba(167, 139, 250, 0.8);
+}
+
+.topicTag.armedServices.selected {
+    background-color: rgba(124, 58, 237, 0.8);
+    border-color: #4A90E2;
+}
+
+.topicTag.economy {
+    background-color: rgba(245, 158, 11, 0.6);
+    border-color: rgba(251, 191, 36, 0.8);
+}
+
+.topicTag.economy.selected {
+    background-color: rgba(245, 158, 11, 0.8);
+    border-color: #4A90E2;
+}
+
+.topicTag.education {
+    background-color: rgba(59, 130, 246, 0.6);
+    border-color: rgba(96, 165, 250, 0.8);
+}
+
+.topicTag.education.selected {
+    background-color: rgba(59, 130, 246, 0.8);
+    border-color: #4A90E2;
+}
+
+.topicTag.technology {
+    background-color: rgba(139, 92, 246, 0.6);
+    border-color: rgba(167, 139, 250, 0.8);
+}
+
+.topicTag.technology.selected {
+    background-color: rgba(139, 92, 246, 0.8);
+    border-color: #4A90E2;
+}
+
+.topicTag.immigration {
+    background-color: rgba(236, 72, 153, 0.6);
+    border-color: rgba(244, 114, 182, 0.8);
+}
+
+.topicTag.immigration.selected {
+    background-color: rgba(236, 72, 153, 0.8);
+    border-color: #4A90E2;
+}
+
+.topicTag.agriculture {
+    background-color: rgba(132, 204, 22, 0.6);
+    border-color: rgba(163, 230, 53, 0.8);
+}
+
+.topicTag.agriculture.selected {
+    background-color: rgba(132, 204, 22, 0.8);
+    border-color: #4A90E2;
+}
+
+.topicTag.government {
+    background-color: rgba(99, 102, 241, 0.6);
+    border-color: rgba(129, 140, 248, 0.8);
+}
+
+.topicTag.government.selected {
+    background-color: rgba(99, 102, 241, 0.8);
+    border-color: #4A90E2;
+}
+
+.topicTag.taxation {
+    background-color: rgba(249, 115, 22, 0.6);
+    border-color: rgba(251, 146, 60, 0.8);
+}
+
+.topicTag.taxation.selected {
+    background-color: rgba(249, 115, 22, 0.8);
+    border-color: #4A90E2;
+}
+
+.topicTag.civilRights {
+    background-color: rgba(6, 182, 212, 0.6);
+    border-color: rgba(34, 211, 238, 0.8);
+}
+
+.topicTag.civilRights.selected {
+    background-color: rgba(6, 182, 212, 0.8);
+    border-color: #4A90E2;
+}
+
+.topicTag.criminalJustice {
+    background-color: rgba(100, 116, 139, 0.6);
+    border-color: rgba(148, 163, 184, 0.8);
+}
+
+.topicTag.criminalJustice.selected {
+    background-color: rgba(100, 116, 139, 0.8);
+    border-color: #4A90E2;
+}
+
+.accountErrorMessage {
+    color: #ff4444;
+    font-size: 0.875rem;
+    text-align: center;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background-color: rgba(255, 68, 68, 0.1);
+    border-radius: 6px;
+}
+
+.accountSuccessMessage {
+    color: #4ade80;
+    font-size: 0.875rem;
+    text-align: center;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background-color: rgba(74, 222, 128, 0.1);
+    border-radius: 6px;
+}
+
+.accountActions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 2rem;
+}
+
+.saveButton {
+    background-color: #0474b6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.saveButton::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.saveButton:hover:not(:disabled)::before {
+    left: 100%;
+}
+
+.saveButton:hover:not(:disabled) {
+    background-color: #0365a0;
+    box-shadow: 0 4px 12px rgba(4, 116, 182, 0.4);
+    transform: translateY(-1px);
+}
+
+.saveButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.saveButton:disabled::before {
+    display: none;
+}
+
+.loadingText {
+    color: #9f9f9f;
+    text-align: center;
+    font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+    .topicsGrid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+}
+
