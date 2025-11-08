@@ -26,6 +26,7 @@ export interface Bill {
     origin: string | null;
     url: string | null;
     sponsors: string[] | null;
+    bill_text: string;
     created_at: string;
     updated_at: string;
 }

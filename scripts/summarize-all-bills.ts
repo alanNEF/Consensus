@@ -6,11 +6,6 @@
 
 import { getAllBills, getBillSummary, insertBillSummary } from "@/lib/supabase";
 import { generateBillSummaryOpenRouter } from "@/lib/ai/openrouter";
-import { Bill } from "@/types";
-
-interface BillWithText extends Bill {
-    bill_text: string;
-}
 
 async function summarizeAllBills(options: { force?: boolean; skipExisting?: boolean } = {}) {
     const { force = false, skipExisting = true } = options;
