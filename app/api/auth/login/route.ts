@@ -38,7 +38,10 @@ export async function POST(request: Request) {
         }
         
         // Redirect to feed page on successful login
-        return NextResponse.redirect(new URL('/feed', request.url));
+        return NextResponse.json(
+            { message: "Login successful" },
+            { status: 200 }
+        );
         
     } catch (error: any) {
         console.error("Error logging in:", error);

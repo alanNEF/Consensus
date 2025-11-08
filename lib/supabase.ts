@@ -188,6 +188,44 @@ export async function getUserSavedBills(userId: string): Promise<SavedBill[]> {
   return (data || []) as SavedBill[];
 }
 
+export async function getUserById(userId: string): Promise<User | null> {
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", userId)
+    .single();
+
+  if (error) {
+    console.error("Error fetching user by ID:", error);
+    return null;
+  }
+
+  return data as User;
+}
+
+export async function getBillsByCategory(category: string, count: number = 15): Promise<Bill[]> {
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("bills")
+    .select("*")
+    .eq("category", category)
+    .order("date", { ascending: false })
+    .limit(count);
+
+  if (error) {
+    console.error("Error fetching bills by category:", error);
+    return [];
+  }
+  return (data || []) as Bill[];
+}
+  
 //Inserts the bill as endorse by the user, if they are opposing it it will change to endorsing
 export async function userEndorseBill(userId: string, billId: string): Promise<void> {
   if (!supabase) {
@@ -458,37 +496,6 @@ export async function getAllBills(): Promise<Bill[]> {
   }
 
   return (data || []) as Bill[];
-}
-
-//TODO: DOESN'T WORK
-export async function getBillsByCategory(): Promise<Record<string, Bill[]>> {
-  if (!supabase) {
-    return {};
-  }
-
-  // TODO: Add category field to bills table or filter by category if it exists
-  const { data, error } = await supabase
-    .from("bills")
-    .select("*")
-    .order("date", { ascending: false });
-
-  if (error) {
-    console.error("Error fetching bills by category:", error);
-    return {};
-  }
-
-  const bills = (data || []) as Bill[];
-  const byCategory: Record<string, Bill[]> = {};
-
-  bills.forEach((bill) => {
-    const category = bill.category || "Uncategorized";
-    if (!byCategory[category]) {
-      byCategory[category] = [];
-    }
-    byCategory[category].push(bill);
-  });
-
-  return byCategory;
 }
 
 export async function insertBillSummary(
