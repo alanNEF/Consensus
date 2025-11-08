@@ -1,37 +1,58 @@
-"use client";
-
-import { useState } from "react";
+import { redirect } from "next/navigation";
+import { getSession, requireAuth } from "@/lib/auth";
+import { getUserEndorsements, getBills } from "@/lib/supabase";
+import BillList from "@/components/bills/BillList";
 import { getMockBills } from "@/lib/mocks";
-import BillCard from "@/components/bills/BillCard";
-import "./your-bills.css";
 
-export default function YourBillsPage() {
-  // For demonstration, select all bills
-  const allBills = getMockBills();
-  const [searchQuery, setSearchQuery] = useState("");
+export default async function YourBillsPage() {
+  const session = await getSession();
+  if (!session?.user?.id) {
+    redirect("/login");
+  }
+
+  // Fetch user's endorsed bills
+  const endorsements = await getUserEndorsements(session.user.id);
+  const endorsedBillIds = new Set(endorsements.map((e) => e.bill_id));
+
+  // Fetch all bills (in production, filter to only endorsed ones)
+  let bills;
+  try {
+    const result = await getBills(1, 100);
+    bills = result.data.length > 0 ? result.data : getMockBills();
+  } catch (error) {
+    console.error("Error fetching bills:", error);
+    bills = getMockBills();
+  }
+
+  // Filter to only endorsed bills
+  const endorsedBills = bills.filter((bill) =>
+    endorsedBillIds.has(bill.id)
+  );
 
   return (
-    <div className="yourBillsContainer">
-      <div className="yourBillsContent">
-        <div className="yourBillsHeader">
-          <h1 className="yourBillsTitle">Your Bills</h1>
-          <p className="yourBillsSubtitle">Bills you've endorsed and saved</p>
-        </div>
-        <div className="searchBarContainer">
-          <input
-            type="text"
-            placeholder="Search bills..."
-            className="searchBar"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <div className="billsGrid">
-          {allBills.map((bill) => (
-            <BillCard key={bill.id} bill={bill} />
-          ))}
-        </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Your Bills</h1>
+        <p className="mt-2 text-gray-600">
+          Bills you've endorsed and saved
+        </p>
       </div>
+      {endorsedBills.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-gray-500 text-lg">
+            You haven't endorsed any bills yet.
+          </p>
+          <a
+            href="/feed"
+            className="mt-4 text-blue-600 hover:text-blue-800 font-medium"
+          >
+            Browse bills →
+          </a>
+        </div>
+      ) : (
+        <BillList bills={endorsedBills} endorsedBillIds={endorsedBillIds} />
+      )}
     </div>
   );
 }
+
