@@ -22,7 +22,7 @@ export async function GET() {
 
         const { data: user, error } = await supabase
             .from("users")
-            .select("id, email, name, residency, topics, race, religion, gender, age_range, party")
+            .select("id, email, name, residency, topics, race, religion, gender, age_range, party, income, education")
             .eq("id", session.user.id)
             .single();
 
@@ -43,6 +43,8 @@ export async function GET() {
             gender: user.gender || null,
             age_range: user.age_range || null,
             party: user.party || null,
+            income: user.income || null,
+            education: user.education || null,
         });
     } catch (error: any) {
         console.error("Error fetching user profile:", error);
@@ -72,7 +74,7 @@ export async function PUT(request: Request) {
         }
 
         const body = await request.json();
-        const { residency, topics, race, religion, gender, age_range, party } = body;
+        const { residency, topics, race, religion, gender, age_range, party, income, education } = body;
 
         const updateData: any = {
             updated_at: new Date().toISOString(),
@@ -106,11 +108,19 @@ export async function PUT(request: Request) {
             updateData.party = party;
         }
 
+        if (income !== undefined) {
+            updateData.income = income;
+        }
+
+        if (education !== undefined) {
+            updateData.education = education;
+        }
+
         const { data: updatedUser, error } = await supabase
             .from("users")
             .update(updateData)
             .eq("id", session.user.id)
-            .select("id, email, name, residency, topics, race, religion, gender, age_range, party")
+            .select("id, email, name, residency, topics, race, religion, gender, age_range, party, income, education")
             .single();
 
         if (error) {
@@ -131,6 +141,8 @@ export async function PUT(request: Request) {
             gender: updatedUser.gender || null,
             age_range: updatedUser.age_range || null,
             party: updatedUser.party || null,
+            income: updatedUser.income || null,
+            education: updatedUser.education || null,
         });
     } catch (error: any) {
         console.error("Error updating user profile:", error);

@@ -166,9 +166,18 @@
 
 .topicCheckmark {
     margin-left: 0.5rem;
-    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: white;
-    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.topicCheckmark svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
 }
 
 /* Category-specific tag colors matching feed */

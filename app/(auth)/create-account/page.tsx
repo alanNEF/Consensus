@@ -43,6 +43,8 @@ export default function CreateAccountPage() {
     const [gender, setGender] = useState("");
     const [ageRange, setAgeRange] = useState("");
     const [party, setParty] = useState("");
+    const [income, setIncome] = useState("");
+    const [education, setEducation] = useState("");
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
@@ -128,6 +130,8 @@ export default function CreateAccountPage() {
                     gender: gender || null,
                     age_range: ageRange || null,
                     party: party || null,
+                    income: income || null,
+                    education: education || null,
                 }),
             });
 
@@ -465,30 +469,54 @@ export default function CreateAccountPage() {
                                         <label htmlFor="race" className="formLabelOptional">
                                             Race
                                         </label>
-                                        <input
+                                        <select
                                             id="race"
                                             name="race"
-                                            type="text"
                                             value={race}
                                             onChange={(e) => setRace(e.target.value)}
-                                            className="formInput"
-                                            placeholder="Enter your race"
-                                        />
+                                            className="formSelect"
+                                        >
+                                            <option value="">Select race</option>
+                                            <option value="american-indian-alaska-native">American Indian or Alaska Native</option>
+                                            <option value="asian">Asian</option>
+                                            <option value="black-african-american">Black or African American</option>
+                                            <option value="hispanic-latino">Hispanic or Latino</option>
+                                            <option value="native-hawaiian-pacific-islander">Native Hawaiian or Other Pacific Islander</option>
+                                            <option value="white">White</option>
+                                            <option value="two-or-more-races">Two or More Races</option>
+                                            <option value="other">Other</option>
+                                            <option value="prefer-not-to-say">Prefer not to say</option>
+                                        </select>
                                     </div>
 
                                     <div className="formGroup">
                                         <label htmlFor="religion" className="formLabelOptional">
                                             Religion
                                         </label>
-                                        <input
+                                        <select
                                             id="religion"
                                             name="religion"
-                                            type="text"
                                             value={religion}
                                             onChange={(e) => setReligion(e.target.value)}
-                                            className="formInput"
-                                            placeholder="Enter your religion"
-                                        />
+                                            className="formSelect"
+                                        >
+                                            <option value="">Select religion</option>
+                                            <option value="christianity">Christianity</option>
+                                            <option value="islam">Islam</option>
+                                            <option value="judaism">Judaism</option>
+                                            <option value="hinduism">Hinduism</option>
+                                            <option value="buddhism">Buddhism</option>
+                                            <option value="sikhism">Sikhism</option>
+                                            <option value="bahai">Bahá'í</option>
+                                            <option value="jainism">Jainism</option>
+                                            <option value="shinto">Shinto</option>
+                                            <option value="taoism">Taoism</option>
+                                            <option value="agnostic">Agnostic</option>
+                                            <option value="atheist">Atheist</option>
+                                            <option value="spiritual-not-religious">Spiritual but not Religious</option>
+                                            <option value="other">Other</option>
+                                            <option value="prefer-not-to-say">Prefer not to say</option>
+                                        </select>
                                     </div>
 
                                     <div className="formGroup">
@@ -529,6 +557,52 @@ export default function CreateAccountPage() {
                                             <option value="45-54">45-54</option>
                                             <option value="55-64">55-64</option>
                                             <option value="65+">65+</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="formGroup">
+                                        <label htmlFor="income" className="formLabelOptional">
+                                            Income
+                                        </label>
+                                        <select
+                                            id="income"
+                                            name="income"
+                                            value={income}
+                                            onChange={(e) => setIncome(e.target.value)}
+                                            className="formSelect"
+                                        >
+                                            <option value="">Select income range</option>
+                                            <option value="under-25000">Under $25,000</option>
+                                            <option value="25000-50000">$25,000 - $50,000</option>
+                                            <option value="50000-75000">$50,000 - $75,000</option>
+                                            <option value="75000-100000">$75,000 - $100,000</option>
+                                            <option value="100000-150000">$100,000 - $150,000</option>
+                                            <option value="150000-200000">$150,000 - $200,000</option>
+                                            <option value="over-200000">Over $200,000</option>
+                                            <option value="prefer-not-to-say">Prefer not to say</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="formGroup">
+                                        <label htmlFor="education" className="formLabelOptional">
+                                            Education
+                                        </label>
+                                        <select
+                                            id="education"
+                                            name="education"
+                                            value={education}
+                                            onChange={(e) => setEducation(e.target.value)}
+                                            className="formSelect"
+                                        >
+                                            <option value="">Select education level</option>
+                                            <option value="high-school">High School</option>
+                                            <option value="some-college">Some College</option>
+                                            <option value="associates">Associate's Degree</option>
+                                            <option value="bachelors">Bachelor's Degree</option>
+                                            <option value="masters">Master's Degree</option>
+                                            <option value="doctoral">Doctoral Degree</option>
+                                            <option value="professional">Professional Degree</option>
+                                            <option value="prefer-not-to-say">Prefer not to say</option>
                                         </select>
                                     </div>
 
