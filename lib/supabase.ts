@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
-import type { Bill, BillSummary, SavedBill, User } from "@/types";
+import type { Bill, BillSummary, Endorsement, SavedBill, User } from "@/types";
 import { generateBillSummaryOpenRouter } from "./ai/openrouter";
+import type { Database } from "./database.types";
 
 // Placeholder for database types
 // TODO: Generate this from Supabase: npx supabase gen types typescript --project-id <project-id> > lib/database.types.ts
@@ -50,7 +51,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 // Create server client with service role key (bypasses RLS)
 export const supabase = supabaseUrl && supabaseServiceKey
-  ? createClient<SupabaseDatabase>(supabaseUrl, supabaseServiceKey, {
+  ? createClient<Database>(supabaseUrl, supabaseServiceKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
@@ -66,7 +67,7 @@ export function createClientSupabase() {
   if (!clientSupabaseUrl || !supabaseAnonKey) {
     throw new Error("Supabase client credentials not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY");
   }
-  return createClient<SupabaseDatabase>(clientSupabaseUrl, supabaseAnonKey);
+  return createClient<Database>(clientSupabaseUrl, supabaseAnonKey);
 }
 
 // Type-safe query helpers
@@ -247,17 +248,5 @@ export async function updateBillWithSummaryKey(billId: string, summaryKey: strin
   }
 
   return data as Bill;
-}
-
-
-// Bill Summary helpers
-export async function makeBillSummary(bill: Bill): Promise<BillSummary | null> {
-  const summary = await generateBillSummaryOpenRouter(bill.bill_text, bill.title);
-  const summaryData = JSON.parse(summary) as { summary: string; one_liner: string };
-  const savedSummary = await insertBillSummary(bill.id, summaryData.summary, summaryData.one_liner);
-  if (!savedSummary) {
-    throw new Error("Failed to save bill summary to database");
-  }
-  return savedSummary;
 }
 

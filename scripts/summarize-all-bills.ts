@@ -101,7 +101,7 @@ async function summarizeAllBills(options: { force?: boolean; skipExisting?: bool
 
             console.log(`${progress} 🔄 Processing ${bill.id}: ${bill.title.substring(0, 60)}...`);
 
-            // Generate summary
+            ``// Generate summary
             const summaryResponse = await generateBillSummaryOpenRouter(bill.bill_text, bill.title);
 
             // Parse the JSON response
