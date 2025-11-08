@@ -3,7 +3,7 @@ import { z } from "zod";
 // User validators
 export const userCreateSchema = z.object({
   email: z.string().email(),
-  name: z.string().min(1).optional().nullable(),
+  name: z.string().min(1),
   topics: z.array(z.string()).optional().nullable(),
   race: z.string().optional().nullable(),
   residency: z.string().optional().nullable(),

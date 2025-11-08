@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getBillById } from "@/lib/supabase";
-import { getMockBills } from "@/lib/mocks";
 
 export async function GET(
   request: Request,
@@ -9,14 +8,8 @@ export async function GET(
   try {
     const billId = params.billId;
 
-    // Try to fetch from database
-    let bill = await getBillById(billId);
-
-    // If not found in DB, try mock data
-    if (!bill) {
-      const mockBills = getMockBills();
-      bill = mockBills.find((b) => b.id === billId) || null;
-    }
+    // Fetch from database
+    const bill = await getBillById(billId);
 
     if (!bill) {
       return NextResponse.json(

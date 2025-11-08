@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { getBillsByCategory } from "@/lib/mocks";
 import BillCard from "@/components/bills/BillCard";
 import type { Bill } from "@/types";
 import "./feed.css";
@@ -22,7 +21,8 @@ const categories = [
 ];
 
 export default function FeedPage() {
-  const billsByCategory = getBillsByCategory();
+  const [billsByCategory, setBillsByCategory] = useState<Record<string, Bill[]>>({});
+  const [loading, setLoading] = useState(true);
   // Only expand cards on hover, no default expansion
   const [expandedCardIndex, setExpandedCardIndex] = useState<Record<string, number>>({});
   const scrollRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -44,6 +44,39 @@ export default function FeedPage() {
       },
     }));
   };
+
+  // Fetch bills from API
+  useEffect(() => {
+    async function fetchBills() {
+      try {
+        const response = await fetch("/api/bills?pageSize=1000");
+        if (!response.ok) {
+          throw new Error("Failed to fetch bills");
+        }
+        const result = await response.json();
+        const bills = result.data || [];
+        
+        // Group bills by category
+        const byCategory: Record<string, Bill[]> = {};
+        bills.forEach((bill: Bill) => {
+          const category = bill.category || "Uncategorized";
+          if (!byCategory[category]) {
+            byCategory[category] = [];
+          }
+          byCategory[category].push(bill);
+        });
+        
+        setBillsByCategory(byCategory);
+      } catch (error) {
+        console.error("Error fetching bills:", error);
+        setBillsByCategory({});
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchBills();
+  }, []);
 
   // Initialize arrow states and set up scroll listeners
   useEffect(() => {

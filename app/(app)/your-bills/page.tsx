@@ -6,8 +6,8 @@ import BillCard from "@/components/bills/BillCard";
 import "./your-bills.css";
 
 export default function YourBillsPage() {
-  // For demonstration, select all bills
-  const allBills = getMockBills();
+  const [allBills, setAllBills] = useState<Bill[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
   return (

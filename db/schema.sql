@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS saved_bills (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   bill_id TEXT NOT NULL REFERENCES bills(id) ON DELETE CASCADE,
+  endorsed BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(user_id, bill_id)
 );

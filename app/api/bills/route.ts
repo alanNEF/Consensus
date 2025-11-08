@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getBills } from "@/lib/supabase";
 import { paginationSchema } from "@/lib/validators";
-import { getMockBills } from "@/lib/mocks";
 
 export async function GET(request: Request) {
   try {
@@ -11,19 +10,15 @@ export async function GET(request: Request) {
       pageSize: searchParams.get("pageSize") || "20",
     });
 
-    // Try to fetch from database
+    // Fetch from database
     const result = await getBills(params.page, params.pageSize);
 
-    // If no data in DB, return mock data
+    // If no data in DB, return error
     if (result.data.length === 0) {
-      const mockBills = getMockBills();
-      return NextResponse.json({
-        data: mockBills,
-        page: params.page,
-        pageSize: params.pageSize,
-        total: mockBills.length,
-        hasMore: false,
-      });
+      return NextResponse.json(
+        { error: "No bills found", data: [], total: 0 },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({
