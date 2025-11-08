@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Logo from "./Logo";
 import "./TopNav.css";
 
 export default function TopNav() {
@@ -11,7 +12,7 @@ export default function TopNav() {
     <nav className="topNav">
       <div className="topNavContainer">
         <Link href="/feed" className="topNavTitle">
-          Bill Tracker
+          <Logo />
         </Link>
         <div className="topNavLinks">
           <Link

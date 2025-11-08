@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import Link from "next/link";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import "./login.css";
 
@@ -30,11 +32,28 @@ export default function LoginPage() {
       return;
     }
 
-    // Simulate login delay
-    setTimeout(() => {
-      router.push("/feed");
-    }, 300);
-  };
+    try {
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("Invalid email or password");
+        setIsLoading(false);
+        return;
+      }
+
+      if (result?.ok) {
+        router.push('/feed');
+      }
+    } catch (err: any) {
+      console.error("Error logging in:", err);
+      setError("An error occurred. Please try again.");
+      setIsLoading(false);
+    }
+};
 
   return (
     <div className="loginContainer">
@@ -87,7 +106,7 @@ export default function LoginPage() {
           </PrimaryButton>
         </form>
         <div className="signUpLink">
-          Don&apos;t have an account? <a href="/create-account">Sign up</a>
+          Don&apos;t have an account? <Link href="/create-account">Sign up</Link>
         </div>
       </div>
     </div>
