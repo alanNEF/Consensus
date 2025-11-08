@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import "./login.css";
+import { NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -31,11 +33,37 @@ export default function LoginPage() {
       return;
     }
 
-    // Simulate login delay
-    setTimeout(() => {
-      router.push("/feed");
-    }, 300);
-  };
+    try {
+      const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+      });
+      
+      // Check if response is ok before trying to parse JSON
+      if (response.ok) {
+          // Try to parse JSON, but handle redirect responses
+          const contentType = response.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+              const data = await response.json();
+              // Successful login - redirect to feed
+              router.push('/feed');
+          } else {
+              // If it's a redirect, just go to feed
+              router.push('/feed');
+          }
+      } else {
+          // Handle error response
+          const data = await response.json();
+          setError(data.error || "Login failed. Please try again.");
+          setIsLoading(false);
+      }
+  } catch (err: any) {
+      console.error("Error logging in:", err);
+      setError("An error occurred. Please try again.");
+      setIsLoading(false);
+  }
+};
 
   return (
     <div className="loginContainer">
@@ -88,7 +116,7 @@ export default function LoginPage() {
           </PrimaryButton>
         </form>
         <div className="signUpLink">
-          Don&apos;t have an account? <Link href="/create-account-step-1">Sign up</Link>
+          Don&apos;t have an account? <Link href="/create-account">Sign up</Link>
         </div>
       </div>
     </div>
