@@ -76,7 +76,7 @@ export function createClientSupabase() {
 }
 
 // Type-safe query helpers
-
+// Bills table
 export async function getBills(
   page: number = 1,
   pageSize: number = 20
@@ -231,3 +231,23 @@ export async function insertBillSummary(
   return data as BillSummary;
 }
 
+// User Table
+
+export async function getUserById(userId: string): Promise<User | null> {
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", userId)
+    .single();
+
+  if (error) {
+    console.error("Error fetching user:", error);
+    return null;
+  }
+
+  return data as User;
+}
