@@ -1,11 +1,12 @@
 # Consensus Python Package
 
-Python package for vector indexing and bill recommendations using pgvector on Supabase.
+Python package for vector indexing and bill recommendations using Milvus (vector database) and Supabase (SQL database).
 
 ## Features
 
-- **Ingest bills**: Generate embeddings and store them in Supabase with pgvector
-- **Recommend bills**: Perform vector similarity search to find relevant bills
+- **Ingest bills**: Generate embeddings and store them in Milvus (vector database) and Supabase (SQL database)
+- **Recommend bills**: Perform vector similarity search using Milvus to find relevant bills
+- **Classify bills**: Automatically categorize bills using zero-shot classification
 
 ## Setup
 
@@ -41,18 +42,63 @@ Python package for vector indexing and bill recommendations using pgvector on Su
    pip install -r requirements.txt
    ```
 
+## Milvus Setup
+
+Milvus is used as the vector database for storing bill embeddings. You can run it using Docker Compose:
+
+1. Start Milvus (from project root):
+   ```bash
+   docker-compose up -d milvus
+   ```
+
+   This will start Milvus along with its dependencies (etcd and MinIO).
+
+2. Verify Milvus is running:
+   ```bash
+   docker ps | grep milvus
+   ```
+
+3. Setup the Milvus collection:
+   ```bash
+   cd python
+   # Using Poetry
+   poetry run python setup_milvus.py
+   
+   # Using pip/venv
+   python setup_milvus.py
+   ```
+
+4. Test the connection:
+   ```bash
+   # Using Poetry
+   poetry run python test_milvus.py
+   
+   # Using pip/venv
+   python test_milvus.py
+   ```
+
+### Alternative: Using Milvus Cloud or Self-Hosted
+
+If you're using Milvus Cloud or a self-hosted instance, update your `.env` file with the correct connection details:
+- `MILVUS_HOST`: Your Milvus host (default: `localhost`)
+- `MILVUS_PORT`: Your Milvus port (default: `19530`)
+- `MILVUS_COLLECTION_NAME`: Collection name (default: `bill_embeddings`)
+
 ## Configuration
 
-1. Copy the example environment file:
+1. Create a `.env` file in the `python` directory:
    ```bash
-   cp .env.example .env
+   cd python
+   touch .env
    ```
 
 2. Fill in your environment variables in `.env`:
    - `SUPABASE_URL`: Your Supabase project URL
    - `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key (server-only)
-   - `OPENAI_API_KEY`: Your OpenAI API key for generating embeddings
-   - `EMBED_MODEL`: OpenAI embedding model (default: `text-embedding-3-small`)
+   - `MILVUS_HOST`: Milvus host (default: `localhost`)
+   - `MILVUS_PORT`: Milvus port (default: `19530`)
+   - `MILVUS_COLLECTION_NAME`: Collection name (default: `bill_embeddings`)
+   - `EMBED_MODEL`: Sentence transformer model for embeddings (default: `sentence-transformers/all-mpnet-base-v2`)
    - `DATABASE_URL`: PostgreSQL connection string (optional, if using direct DB connection)
 
 ## Usage
@@ -71,8 +117,10 @@ python src/ingest.py
 
 This will:
 1. Fetch bills (currently using mock data)
-2. Generate embeddings using OpenAI
-3. Upsert embeddings to the `bill_embeddings` table in Supabase
+2. Classify bills into categories using zero-shot classification
+3. Generate embeddings using sentence-transformers
+4. Store bill metadata and categories in Supabase (SQL database)
+5. Store embeddings in Milvus (vector database)
 
 ### Recommend Bills
 
@@ -91,31 +139,39 @@ poetry run python src/recommend.py
 
 ## Database Setup
 
+### Supabase Setup
+
 Make sure you've run the database schema (`db/schema.sql`) which includes:
-- `bill_embeddings` table with pgvector support
-- Vector indexes for efficient similarity search
+- `bills` table for bill metadata
+- `bill_summaries` table for bill summaries
+- `categories` support for bill classification
+
+### Milvus Setup
+
+The Milvus collection is automatically created when you run `setup_milvus.py` or when you first ingest bills. The collection schema includes:
+- `bill_id`: Primary key (VARCHAR, max 100 chars)
+- `embedding`: Vector field (768 dimensions for all-mpnet-base-v2 model)
+- Index: IVF_FLAT with L2 distance metric
+
+### Clearing Milvus Database
+
+To clear all data from Milvus:
+```python
+from ingest import clear_milvus_database
+clear_milvus_database()
+```
+
+Or use the setup script:
+```bash
+python setup_milvus.py --clear
+```
 
 ## Vector Similarity Search
 
-To enable efficient vector similarity search, create a Supabase RPC function:
-
-```sql
-CREATE OR REPLACE FUNCTION match_bills(query_embedding vector(1536), match_count int)
-RETURNS TABLE (bill_id text, similarity float)
-AS $$
-BEGIN
-  RETURN QUERY
-  SELECT 
-    be.bill_id, 
-    1 - (be.embedding <=> query_embedding) as similarity
-  FROM bill_embeddings be
-  ORDER BY be.embedding <=> query_embedding
-  LIMIT match_count;
-END;
-$$ LANGUAGE plpgsql;
-```
-
-Then update `recommend.py` to use this function via Supabase RPC.
+The `recommend.py` script uses Milvus for vector similarity search. It:
+1. Generates an embedding for the query text
+2. Searches Milvus for similar bill embeddings
+3. Returns the most similar bills with similarity scores
 
 ## Development
 

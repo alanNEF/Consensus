@@ -1,14 +1,14 @@
 """
-Recommendation script: performs vector similarity search to recommend bills.
+Bill classification script: classifies bills in the database into categories that we have specified.
 
-Also provides classification functions used during bill ingestion.
+Provides classification functions and processes all bills in the database to assign categories.
 """
 
 import os
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 import numpy as np
 from transformers import pipeline
 
@@ -16,12 +16,15 @@ from transformers import pipeline
 sys.path.insert(0, str(Path(__file__).parent))
 
 # Load environment variables
+# Look for .env file in the python directory (parent of src)
+python_dir = Path(__file__).parent.parent
+env_path = python_dir / ".env"
+load_dotenv(dotenv_path=env_path)
+# Also try loading from current directory (for backwards compatibility)
 load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-EMBED_MODEL = os.getenv("EMBED_MODEL", "text-embedding-3-small")
 
 # Check if required env vars are set
 if not SUPABASE_URL or SUPABASE_URL == "replace_me":
@@ -32,15 +35,11 @@ if not SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SERVICE_ROLE_KEY == "replace_me":
     print("⚠️  SUPABASE_SERVICE_ROLE_KEY not configured. Using mock mode.")
     SUPABASE_SERVICE_ROLE_KEY = None
 
-if not OPENAI_API_KEY or OPENAI_API_KEY == "replace_me":
-    print("⚠️  OPENAI_API_KEY not configured. Using mock embeddings.")
-    OPENAI_API_KEY = None
-
 # Bill classification categories
 CANDIDATE_LABELS = [
-    'Health', 'Environment', 'Armed Services', 'Economy', 'Education', 
+    'Healthcare', 'Environmentalism', 'Armed Services', 'Economy', 'Education', 
     'Technology', 'Immigration', 'Agriculture + Food', 'Government Operations', 
-    'Taxation', 'Civil Rights', 'Criminal Justice'
+    'Taxation', 'Civil Rights', 'Criminal Justice', 'Foreign Policy',
 ]
 
 # Initialize classifier (lazy loading)
@@ -61,7 +60,7 @@ def softmax(x: np.ndarray) -> np.ndarray:
     return e_x / e_x.sum(axis=0)
 
 
-def classify_bill_text(text: str, threshold_std: float = 0.5) -> List[Tuple[str, float]]:
+def classify_bill_text(text: str, threshold_std: float = 0.65) -> List[Tuple[str, float]]:
     """
     Classify bill text into categories using zero-shot classification.
     
@@ -98,139 +97,228 @@ def classify_bill_text(text: str, threshold_std: float = 0.5) -> List[Tuple[str,
     return top_results
 
 
-def generate_embedding(text: str) -> List[float]:
-    """Generate embedding for text using OpenAI"""
-    if not OPENAI_API_KEY:
-        # Return mock embedding
-        print("  [MOCK] Generating mock embedding...")
-        import random
-        return [random.random() for _ in range(1536)]
-
-    try:
-        from openai import OpenAI
-
-        client = OpenAI(api_key=OPENAI_API_KEY)
-        response = client.embeddings.create(
-            model=EMBED_MODEL,
-            input=text,
-        )
-        return response.data[0].embedding
-    except Exception as e:
-        print(f"  [ERROR] Failed to generate embedding: {e}")
-        # Return mock embedding on error
-        import random
-        return [random.random() for _ in range(1536)]
-
-
-def recommend_bills_by_query(query: str, top_n: int = 5) -> List[Dict[str, Any]]:
-    """Recommend bills based on a text query"""
-    print(f"🔍 Searching for bills similar to: '{query}'")
-    print()
-
-    # Generate embedding for query
-    print("  Generating query embedding...")
-    query_embedding = generate_embedding(query)
-
+def get_bills_from_database(limit: Optional[int] = None, offset: int = 0) -> List[Dict[str, Any]]:
+    """Fetch bills from the database"""
     if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
-        print("  [MOCK] Would perform vector similarity search")
-        print("  [MOCK] Returning mock recommendations...")
-        return [
-            {"bill_id": "hr1234-118", "similarity": 0.95, "title": "Infrastructure Investment and Jobs Act"},
-            {"bill_id": "s5678-118", "similarity": 0.87, "title": "Climate Action and Clean Energy Bill"},
-        ]
-
+        print("  [MOCK] Would fetch bills from database")
+        return []
+    
     try:
         from supabase import create_client, Client
-
         supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-
-        # Convert embedding to string format for pgvector
-        embedding_str = "[" + ",".join(map(str, query_embedding)) + "]"
-
-        # Perform vector similarity search using cosine distance
-        # Note: This requires the pgvector extension and proper indexing
-        # SQL: SELECT bill_id, 1 - (embedding <=> $1::vector) as similarity
-        #      FROM bill_embeddings
-        #      ORDER BY embedding <=> $1::vector
-        #      LIMIT $2
-
-        # Using Supabase RPC (if you create a function) or raw SQL
-        # For now, we'll use a mock approach
-        # TODO: Implement actual vector similarity search using Supabase RPC or raw SQL
-
-        print("  [TODO] Vector similarity search not yet implemented")
-        print("  Create a Supabase RPC function for vector search:")
-        print("  CREATE OR REPLACE FUNCTION match_bills(query_embedding vector(1536), match_count int)")
-        print("  RETURNS TABLE (bill_id text, similarity float)")
-        print("  AS $$")
-        print("  BEGIN")
-        print("    RETURN QUERY")
-        print("    SELECT be.bill_id, 1 - (be.embedding <=> query_embedding) as similarity")
-        print("    FROM bill_embeddings be")
-        print("    ORDER BY be.embedding <=> query_embedding")
-        print("    LIMIT match_count;")
-        print("  END;")
-        print("  $$ LANGUAGE plpgsql;")
-
-        return []
+        
+        query = supabase.table("bills").select("*")
+        
+        if limit:
+            query = query.limit(limit)
+        if offset:
+            query = query.offset(offset)
+        
+        result = query.execute()
+        return result.data if result.data else []
     except Exception as e:
-        print(f"  [ERROR] Failed to perform similarity search: {e}")
+        print(f"  [ERROR] Failed to fetch bills: {e}")
         return []
 
 
-def recommend_bills_for_user(user_id: str, top_n: int = 5) -> List[Dict[str, Any]]:
-    """Recommend bills for a specific user based on their preferences"""
-    print(f"👤 Generating recommendations for user: {user_id}")
-    print()
+def get_bill_summary_text(bill_id: str) -> Optional[str]:
+    """Fetch bill summary text from database if available"""
+    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        return None
+    
+    try:
+        from supabase import create_client, Client
+        supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+        
+        result = supabase.table("bill_summaries").select("summary_text").eq("bill_id", bill_id).limit(1).execute()
+        
+        if result.data and len(result.data) > 0:
+            return result.data[0]["summary_text"]
+        return None
+    except Exception as e:
+        print(f"  [WARNING] Could not fetch summary for {bill_id}: {e}")
+        return None
 
-    # TODO: Fetch user preferences from database
-    # For now, use a mock query
-    query = "infrastructure jobs climate energy"
-    return recommend_bills_by_query(query, top_n)
+
+def update_bill_categories(bill_id: str, categories: List[str]) -> bool:
+    """Update bill categories in the database"""
+    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        print(f"  [MOCK] Would update categories for bill {bill_id}: {categories}")
+        return True  # Return True in mock mode to allow testing
+    
+    try:
+        from supabase import create_client, Client
+        supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+        
+        print(f"  [DEBUG] Updating bill {bill_id} with categories: {categories}")
+        result = supabase.table("bills").update(
+            {"categories": categories}
+        ).eq("id", bill_id).execute()
+        
+        if result.data:
+            print(f"  [DEBUG] Successfully updated bill {bill_id}")
+            return True
+        else:
+            print(f"  [WARNING] Update returned no data for bill {bill_id}")
+            return False
+    except Exception as e:
+        print(f"  [ERROR] Failed to update categories for {bill_id}: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def classify_bill_in_database(bill: Dict[str, Any], threshold_std: float = 0.5) -> bool:
+    """Classify a single bill and update its categories in the database"""
+    bill_id = bill["id"]
+    bill_title = bill.get("title", "")
+    
+    # Get bill summary text
+    summary_text = get_bill_summary_text(bill_id)
+    
+    # Prepare text for classification
+    if summary_text:
+        classification_text = f"{bill_title} {summary_text}"
+    else:
+        classification_text = f"{bill_title} {bill.get('summary_key', '')}"
+    
+    # Classify bill
+    try:
+        classification_results = classify_bill_text(classification_text, threshold_std)
+        
+        # Print each prediction from the AI model
+        print(f"  📊 AI Model Predictions for {bill_id}:")
+        if classification_results:
+            for label, score in classification_results:
+                print(f"     - {label}: {score:.4f} ({score*100:.2f}%)")
+        else:
+            print(f"     - No categories met the threshold")
+        print()
+        
+        categories = [label for label, score in classification_results]
+        
+        # Update database
+        if categories:
+            print(f"  💾 Updating database with categories: {categories}")
+            success = update_bill_categories(bill_id, categories)
+            if success:
+                print(f"  ✅ Classified: {', '.join(categories)}")
+            else:
+                print(f"  ⚠️  Classification succeeded but update failed")
+            return success
+        else:
+            print(f"  ⚠️  No categories found (threshold too high)")
+            # Update with empty categories
+            print(f"  💾 Updating database with empty categories")
+            success = update_bill_categories(bill_id, [])
+            return success
+            
+    except Exception as e:
+        print(f"  [ERROR] Classification failed: {e}")
+        return False
+
+
+def classify_all_bills(threshold_std: float = 0.5, limit: Optional[int] = None, offset: int = 0, update_existing: bool = False):
+    """Classify all bills in the database"""
+    print("🏷️  Starting bill classification...")
+    print()
+    
+    # Fetch bills from database (with pagination if no limit specified)
+    print("📥 Fetching bills from database...")
+    
+    if limit is not None:
+        # If limit is specified, use it directly (for backward compatibility)
+        all_bills = get_bills_from_database(limit=limit, offset=offset)
+    else:
+        # If no limit, fetch all bills with pagination
+        all_bills = []
+        page_size = 1000
+        current_offset = offset
+        
+        while True:
+            bills = get_bills_from_database(limit=page_size, offset=current_offset)
+            if not bills:
+                break
+            all_bills.extend(bills)
+            print(f"  Fetched {len(bills)} bills (total: {len(all_bills)})...")
+            
+            # If we got fewer than page_size, we've reached the end
+            if len(bills) < page_size:
+                break
+            current_offset += page_size
+    
+    if not all_bills:
+        print("  No bills found in database.")
+        return
+    
+    print(f"  Found {len(all_bills)} bills total")
+    print()
+    
+    # Process each bill
+    successful = 0
+    failed = 0
+    skipped = 0
+    
+    for i, bill in enumerate(all_bills, 1):
+        bill_id = bill["id"]
+        bill_title = bill.get("title", "Unknown")
+                
+        print(f"[{i}/{len(all_bills)}] Classifying: {bill_title} ({bill_id})")
+        
+        if classify_bill_in_database(bill, threshold_std):
+            successful += 1
+        else:
+            failed += 1
+        
+        print()
+    
+    # Summary
+    print("✅ Classification complete!")
+    print()
+    print(f"📊 Summary:")
+    print(f"   - Total bills: {len(all_bills)}")
+    print(f"   - Successfully classified: {successful}")
+    print(f"   - Failed: {failed}")
+    print(f"   - Skipped: {skipped}")
+    print()
 
 
 def main():
-    """Main recommendation function"""
+    """Main classification function"""
     import argparse
 
-    parser = argparse.ArgumentParser(description="Recommend bills using vector similarity search")
+    parser = argparse.ArgumentParser(description="Classify bills in the database into categories")
     parser.add_argument(
-        "--query",
-        type=str,
-        help="Text query to search for similar bills",
+        "--threshold-std",
+        type=float,
+        default=0.5,
+        help="Number of standard deviations above mean for classification threshold (default: 0.5)",
     )
     parser.add_argument(
-        "--user-id",
-        type=str,
-        help="User ID to generate personalized recommendations",
-    )
-    parser.add_argument(
-        "--top-n",
+        "--limit",
         type=int,
-        default=5,
-        help="Number of recommendations to return (default: 5)",
+        help="Limit number of bills to process",
+    )
+    parser.add_argument(
+        "--offset",
+        type=int,
+        default=0,
+        help="Offset for pagination (default: 0)",
+    )
+    parser.add_argument(
+        "--update-existing",
+        action="store_true",
+        help="Update bills that already have categories",
     )
 
     args = parser.parse_args()
 
-    # Handle recommendation requests
-    if args.query:
-        recommendations = recommend_bills_by_query(args.query, args.top_n)
-    elif args.user_id:
-        recommendations = recommend_bills_for_user(args.user_id, args.top_n)
-    else:
-        # Default: use a sample query
-        recommendations = recommend_bills_by_query("climate change renewable energy", args.top_n)
-
-    print()
-    print("📊 Recommendations:")
-    print()
-    for i, rec in enumerate(recommendations, 1):
-        print(f"  {i}. {rec.get('title', rec.get('bill_id', 'Unknown'))}")
-        print(f"     Bill ID: {rec.get('bill_id', 'N/A')}")
-        if 'similarity' in rec:
-            print(f"     Similarity: {rec['similarity']:.2f}")
-        print()
+    classify_all_bills(
+        threshold_std=args.threshold_std,
+        limit=args.limit,
+        offset=args.offset,
+        update_existing=args.update_existing
+    )
 
 
 if __name__ == "__main__":

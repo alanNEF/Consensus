@@ -17,6 +17,3 @@ torch==2.9.0  # PyTorch (required by transformers and sentence-transformers)
 transformers==4.57.1  # Hugging Face transformers (for zero-shot classification)
 sentence-transformers>=2.2.0  # Sentence embeddings (for bill text embeddings)
 
-# Optional: OpenAI (used as fallback in recommend.py if configured)
-openai>=1.0.0  # OpenAI API client (optional, for alternative embeddings)
-

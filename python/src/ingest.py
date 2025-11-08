@@ -1,6 +1,6 @@
 """
-Bill ingestion script: pulls bills, generates embeddings using sentence-transformers,
-classifies bills, and stores data in Supabase (SQL) and Milvus (vector database)
+Bill ingestion script: fetches bills from Supabase database, generates embeddings 
+using sentence-transformers, and stores embeddings in Milvus (vector database)
 """
 
 import os
@@ -13,15 +13,16 @@ import json
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
-# Import classification function from recommend.py
-from recommend import classify_bill_text
-
 # Load environment variables
+# Look for .env file in the python directory (parent of src)
+python_dir = Path(__file__).parent.parent
+env_path = python_dir / ".env"
+load_dotenv(dotenv_path=env_path)
+# Also try loading from current directory (for backwards compatibility)
 load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 EMBED_MODEL = os.getenv("EMBED_MODEL", "sentence-transformers/all-mpnet-base-v2")
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -39,12 +40,32 @@ if not SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SERVICE_ROLE_KEY == "replace_me":
     print("⚠️  SUPABASE_SERVICE_ROLE_KEY not configured. Using mock mode.")
     SUPABASE_SERVICE_ROLE_KEY = None
 
-if not OPENAI_API_KEY or OPENAI_API_KEY == "replace_me":
-    print("⚠️  OPENAI_API_KEY not configured. Using mock embeddings.")
-    OPENAI_API_KEY = None
-
 # Initialize sentence transformer model (lazy loading)
 _embedding_model = None
+
+
+def get_bills_from_database(limit: Optional[int] = None, offset: int = 0) -> List[Dict[str, Any]]:
+    """Fetch bills from the database"""
+    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        print("  [MOCK] Would fetch bills from database")
+        return []
+    
+    try:
+        from supabase import create_client, Client
+        supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+        
+        query = supabase.table("bills").select("*")
+        
+        if limit:
+            query = query.limit(limit)
+        if offset:
+            query = query.offset(offset)
+        
+        result = query.execute()
+        return result.data if result.data else []
+    except Exception as e:
+        print(f"  [ERROR] Failed to fetch bills: {e}")
+        return []
 
 
 def get_mock_bills() -> List[Dict[str, Any]]:
@@ -78,8 +99,10 @@ def get_embedding_model():
     global _embedding_model
     if _embedding_model is None:
         from sentence_transformers import SentenceTransformer
-        print(f"  Loading embedding model: {EMBED_MODEL}")
-        _embedding_model = SentenceTransformer(EMBED_MODEL)
+        
+        model_name = "sentence-transformers/all-mpnet-base-v2"
+        print(f"  Loading embedding model: {model_name}")
+        _embedding_model = SentenceTransformer(model_name)
     return _embedding_model
 
 
@@ -99,7 +122,7 @@ def generate_embedding(text: str) -> List[float]:
         return [random.random() for _ in range(768)]
 
 
-def upsert_bill(bill: Dict[str, Any], categories: Optional[List[str]] = None) -> bool:
+def upsert_bill(bill: Dict[str, Any], categories: Optional[List[str]] = None, bill_text: Optional[str] = None) -> bool:
     """Upsert bill data to Supabase"""
     if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
         print(f"  [MOCK] Would upsert bill {bill['id']}")
@@ -124,6 +147,13 @@ def upsert_bill(bill: Dict[str, Any], categories: Optional[List[str]] = None) ->
             "sponsors": bill.get("sponsors", []),
         }
         
+        # Add bill_text if provided, otherwise use empty string (required by schema)
+        if bill_text is not None:
+            bill_data["bill_text"] = bill_text
+        else:
+            # Use title + summary_key as fallback if no bill_text provided
+            bill_data["bill_text"] = f"{bill.get('title', '')} {bill.get('summary_key', '')}".strip() or ""
+        
         # Add categories if provided
         if categories:
             bill_data["categories"] = categories
@@ -143,13 +173,16 @@ def upsert_bill(bill: Dict[str, Any], categories: Optional[List[str]] = None) ->
 def get_milvus_connection():
     """Get or create Milvus connection"""
     try:
-        from pymilvus import connections
+        from pymilvus import connections, utility
         
-        # Check if already connected
+        # Check if already connected and working
         try:
-            connections.get_connection_addr("default")
+            addr = connections.get_connection_addr("default")
+            # Verify connection is actually working by trying to list collections
+            utility.list_collections()
             return True
-        except:
+        except Exception:
+            # Connection doesn't exist or is broken, create new one
             pass
         
         # Connect to Milvus
@@ -158,24 +191,41 @@ def get_milvus_connection():
             host=MILVUS_HOST,
             port=int(MILVUS_PORT)
         )
+        
+        # Verify connection works
+        utility.list_collections()
         return True
     except Exception as e:
         print(f"  [ERROR] Failed to connect to Milvus: {e}")
+        print(f"  [DEBUG] Host: {MILVUS_HOST}, Port: {MILVUS_PORT}")
         return False
 
 
-def setup_milvus_collection():
+def setup_milvus_collection(verbose: bool = True):
     """Create or get Milvus collection for bill embeddings"""
     try:
         from pymilvus import Collection, FieldSchema, CollectionSchema, DataType, utility, connections
         
-        # Ensure connection
+        # Ensure connection is established and working
         if not get_milvus_connection():
+            if verbose:
+                print(f"  [ERROR] Cannot setup collection: Milvus connection failed")
             return None
+        
+        # Double-check connection is active before proceeding
+        try:
+            utility.list_collections()
+        except Exception as e:
+            if verbose:
+                print(f"  [ERROR] Connection verification failed: {e}")
+            # Try to reconnect
+            if not get_milvus_connection():
+                return None
         
         # Check if collection exists
         if utility.has_collection(MILVUS_COLLECTION_NAME):
-            print(f"  Collection '{MILVUS_COLLECTION_NAME}' already exists")
+            if verbose:
+                print(f"  Collection '{MILVUS_COLLECTION_NAME}' already exists")
             collection = Collection(MILVUS_COLLECTION_NAME)
             collection.load()
             return collection
@@ -213,7 +263,8 @@ def setup_milvus_collection():
         # Load collection into memory
         collection.load()
         
-        print(f"  Created and loaded collection '{MILVUS_COLLECTION_NAME}'")
+        if verbose:
+            print(f"  Created and loaded collection '{MILVUS_COLLECTION_NAME}'")
         return collection
         
     except Exception as e:
@@ -221,13 +272,14 @@ def setup_milvus_collection():
         return None
 
 
-def upsert_bill_embedding_milvus(bill_id: str, embedding: List[float]) -> bool:
+def upsert_bill_embedding_milvus(bill_id: str, embedding: List[float], collection=None) -> bool:
     """Upsert bill embedding to Milvus vector database"""
     try:
         from pymilvus import Collection, utility
         
-        # Setup collection
-        collection = setup_milvus_collection()
+        # Use provided collection or setup if not provided
+        if collection is None:
+            collection = setup_milvus_collection(verbose=False)
         if collection is None:
             print(f"  [MOCK] Would upsert embedding for bill {bill_id} to Milvus")
             return False
@@ -251,6 +303,31 @@ def upsert_bill_embedding_milvus(bill_id: str, embedding: List[float]) -> bool:
         return True
     except Exception as e:
         print(f"  [ERROR] Failed to upsert embedding to Milvus: {e}")
+        return False
+
+
+def clear_milvus_database() -> bool:
+    """Clear all data from the Milvus database by dropping the collection"""
+    try:
+        from pymilvus import utility
+        
+        # Ensure connection
+        if not get_milvus_connection():
+            print("  [ERROR] Failed to connect to Milvus")
+            return False
+        
+        # Check if collection exists
+        if not utility.has_collection(MILVUS_COLLECTION_NAME):
+            print(f"  Collection '{MILVUS_COLLECTION_NAME}' does not exist. Nothing to clear.")
+            return True
+        
+        # Drop the collection
+        utility.drop_collection(MILVUS_COLLECTION_NAME)
+        print(f"  ✅ Successfully dropped collection '{MILVUS_COLLECTION_NAME}'")
+        return True
+        
+    except Exception as e:
+        print(f"  [ERROR] Failed to clear Milvus database: {e}")
         return False
 
 
@@ -314,78 +391,110 @@ def get_bill_full_text(bill_id: str) -> Optional[str]:
 
 
 def ingest_bills():
-    """Main ingestion function"""
+    """Main ingestion function - fetches all bills from database and creates embeddings"""
     print("🚀 Starting bill ingestion...")
     print()
 
-    # Fetch bills (mock for now)
-    # TODO: Replace with actual Congress.gov API call or database query
-    print("📥 Fetching bills...")
-    bills = get_mock_bills()
-    print(f"  Found {len(bills)} bills")
+    # Clear Milvus database before filling it again
+    print("🗑️  Clearing Milvus database...")
+    if clear_milvus_database():
+        print("  ✅ Milvus database cleared")
+    else:
+        print("  ⚠️  Failed to clear Milvus database (may not exist)")
+    print()
+
+    # Setup Milvus collection once
+    print("📦 Setting up Milvus collection...")
+    collection = setup_milvus_collection()
+    if collection is None:
+        print("  ❌ Failed to setup Milvus collection")
+        print("  💡 Make sure Milvus is running: docker-compose up -d milvus")
+        return
+    print("  ✅ Milvus collection ready")
+    print()
+
+    # Fetch all bills from database (with pagination to handle >1000 bills)
+    print("📥 Fetching bills from database...")
+    all_bills = []
+    page_size = 1000
+    offset = 0
+    
+    while True:
+        bills = get_bills_from_database(limit=page_size, offset=offset)
+        if not bills:
+            break
+        all_bills.extend(bills)
+        print(f"  Fetched {len(bills)} bills (total: {len(all_bills)})...")
+        
+        # If we got fewer than page_size, we've reached the end
+        if len(bills) < page_size:
+            break
+        offset += page_size
+    
+    if not all_bills:
+        print("  ❌ No bills found in database")
+        print("  💡 Make sure bills are already in the Supabase database")
+        return
+    
+    print(f"  Found {len(all_bills)} bills total")
     print()
 
     # Process each bill
-    for i, bill in enumerate(bills, 1):
-        print(f"[{i}/{len(bills)}] Processing: {bill['title']}")
+    successful = 0
+    failed = 0
+    
+    for i, bill in enumerate(all_bills, 1):
+        bill_id = bill.get("id", "unknown")
+        bill_title = bill.get("title", "Unknown")
+        print(f"[{i}/{len(all_bills)}] Processing: {bill_title} ({bill_id})")
 
-        # Get full bill text for embedding (priority: full text > summary > title)
-        full_text = get_bill_full_text(bill["id"])
-        summary_text = get_bill_summary_text(bill["id"])
+        # Get bill text for embedding (priority: bill_text > summary_text > title + summary_key)
+        bill_text = bill.get("bill_text")
+        summary_text = get_bill_summary_text(bill_id)
         
-        # Prepare text for classification (use summary if available, otherwise title + summary_key)
-        if summary_text:
-            classification_text = f"{bill['title']} {summary_text}"
-        else:
-            classification_text = f"{bill['title']} {bill.get('summary_key', '')}"
-
-        # Classify bill into categories
-        print("  Classifying bill into categories...")
-        try:
-            classification_results = classify_bill_text(classification_text, threshold_std=0.5)
-            categories = [label for label, score in classification_results]
-            print(f"  Categories: {', '.join(categories) if categories else 'None'}")
-        except Exception as e:
-            print(f"  [WARNING] Classification failed: {e}")
-            categories = []
-
-        # Upsert bill with categories
-        print("  Upserting bill to database...")
-        upsert_bill(bill, categories=categories if categories else None)
-
-        # Generate text for embedding - USE FULL TEXT if available
-        if full_text:
-            embedding_text = full_text
-            print("  Using full bill text for embedding")
+        # Determine embedding text
+        if bill_text:
+            embedding_text = bill_text
+            print("  Using bill_text field for embedding")
         elif summary_text:
-            embedding_text = f"{bill['title']} {summary_text}"
-            print("  Using summary text for embedding (full text not available)")
+            embedding_text = f"{bill_title} {summary_text}"
+            print("  Using summary_text for embedding (bill_text not available)")
         else:
-            embedding_text = f"{bill['title']} {bill.get('summary_key', '')}"
-            print("  Using title + summary_key for embedding (full text and summary not available)")
+            embedding_text = f"{bill_title} {bill.get('summary_key', '')}".strip()
+            if not embedding_text:
+                embedding_text = bill_title
+            print("  Using title + summary_key for embedding (bill_text and summary not available)")
 
         # Generate embedding using sentence-transformers
-        print("  Generating embedding using sentence-transformers...")
-        embedding = generate_embedding(embedding_text)
-        print(f"  Embedding dimension: {len(embedding)}")
+        print("  Generating embedding...")
+        try:
+            embedding = generate_embedding(embedding_text)
+            print(f"  Embedding dimension: {len(embedding)}")
 
-        # Upsert embedding to Milvus vector database
-        print("  Upserting embedding to Milvus...")
-        success = upsert_bill_embedding_milvus(bill["id"], embedding)
+            # Upsert embedding to Milvus vector database
+            print("  Storing embedding in Milvus...")
+            success = upsert_bill_embedding_milvus(bill_id, embedding, collection=collection)
 
-        if success:
-            print(f"  ✅ Successfully processed {bill['id']}")
-            print(f"     - Categories stored in Supabase (SQL)")
-            print(f"     - Embedding stored in Milvus (linked via bill_id: {bill['id']})")
-        else:
-            print(f"  ⚠️  Processed {bill['id']} (mock mode)")
+            if success:
+                print(f"  ✅ Successfully processed {bill_id}")
+                successful += 1
+            else:
+                print(f"  ⚠️  Failed to store embedding for {bill_id}")
+                failed += 1
+        except Exception as e:
+            print(f"  ❌ Error processing {bill_id}: {e}")
+            failed += 1
 
         print()
 
     print("✅ Ingestion complete!")
     print()
+    print(f"📊 Summary:")
+    print(f"   - Total bills: {len(all_bills)}")
+    print(f"   - Successfully processed: {successful}")
+    print(f"   - Failed: {failed}")
+    print()
     print("💡 Next steps:")
-    print("   - Verify bill metadata and categories in Supabase (SQL database)")
     print("   - Verify embeddings in Milvus vector database")
     print("   - Bills are linked between databases via bill_id")
     print("   - Use bill_id to join SQL metadata with Milvus vectors for search")
