@@ -56,10 +56,6 @@ export interface SavedBill {
     created_at: string;
 }
 
-export interface BillWithSummary extends Bill {
-    summary?: BillSummary;
-}
-
 export interface PaginatedResponse<T> {
     data: T[];
     page: number;

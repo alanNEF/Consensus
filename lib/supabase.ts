@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Bill, BillSummary, SavedBill, User } from "@/types";
+import { generateBillSummaryOpenRouter } from "./ai/openrouter";
 
 // Placeholder for database types
 // TODO: Generate this from Supabase: npx supabase gen types typescript --project-id <project-id> > lib/database.types.ts
@@ -45,10 +46,6 @@ if (!supabaseUrl || !supabaseServiceKey) {
   console.warn(
     "⚠️  Supabase credentials not configured. Database operations will be mocked."
   );
-}
-
-export function assembleLink(bill:CongressBill): string {
-  return `https://www.congress.gov/bill/${bill.congress}th-congress/${bill.originChamber}-bill/${bill.number}`;
 }
 
 // Create server client with service role key (bypasses RLS)
@@ -186,7 +183,8 @@ export async function getAllBills(): Promise<Bill[]> {
 
 export async function insertBillSummary(
   billId: string,
-  summaryText: string
+  summaryText: string,
+  oneLiner: string
 ): Promise<BillSummary | null> {
   if (!supabase) {
     return null;
@@ -197,15 +195,50 @@ export async function insertBillSummary(
   // The Insert type for bill_summaries is: { bill_id: string; summary_text: string }
   const { data, error } = await supabase
     .from("bill_summaries")
-    .insert({ bill_id: billId, summary_text: summaryText } as any)
+    .insert({ bill_id: billId, summary_text: summaryText, one_liner: oneLiner } as any)
     .select()
     .single();
-
   if (error) {
     console.error("Error inserting bill summary:", error);
     return null;
   }
-
+  if (!data) {
+    console.error("No data returned from insert bill summary");
+    return null;
+  }
+  await updateBillWithSummaryKey(billId, (data as BillSummary).id);
   return data as BillSummary;
+}
+
+export async function updateBillWithSummaryKey(billId: string, summaryKey: string): Promise<Bill | null> {
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("bills")
+    .update({ summary_key: summaryKey } as never)
+    .eq("id", billId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating bill summary key:", error);
+    return null;
+  }
+
+  return data as Bill;
+}
+
+
+// Bill Summary helpers
+export async function makeBillSummary(bill: Bill): Promise<BillSummary | null> {
+  const summary = await generateBillSummaryOpenRouter(bill.bill_text, bill.title);
+  const summaryData = JSON.parse(summary) as { summary: string; one_liner: string };
+  const savedSummary = await insertBillSummary(bill.id, summaryData.summary, summaryData.one_liner);
+  if (!savedSummary) {
+    throw new Error("Failed to save bill summary to database");
+  }
+  return savedSummary;
 }
 

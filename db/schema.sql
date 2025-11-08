@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS bills (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
-  summary_key TEXT,
+  summary_key TEXT UNIQUE,
   date DATE NOT NULL,
   status TEXT NOT NULL,
   origin TEXT NOT NULL,
@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS bills (
 CREATE TABLE IF NOT EXISTS bill_summaries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   bill_id TEXT NOT NULL REFERENCES bills(id) ON DELETE CASCADE,
+  one_liner TEXT NOT NULL,
   summary_text TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
