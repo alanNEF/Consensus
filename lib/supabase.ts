@@ -1,7 +1,40 @@
 import { createClient } from "@supabase/supabase-js";
-import type { Bill, BillSummary, Endorsement, SavedBill, User } from "@/types";
-import type { Database } from "./database.types";
-import { CongressBill } from "./congress/clients";
+import type { Bill, BillSummary, SavedBill, User } from "@/types";
+
+// Placeholder for database types
+// TODO: Generate this from Supabase: npx supabase gen types typescript --project-id <project-id> > lib/database.types.ts
+export interface SupabaseDatabase {
+  public: {
+    Tables: {
+      users: {
+        Row: User;
+        Insert: Omit<User, "id" | "created_at" | "updated_at" | "topics" | "race" | "religion" | "gender" | "age_range" | "party" | "income" | "education">;
+        Update: Partial<Omit<User, "id" | "created_at" | "updated_at">>;
+      };
+      bills: {
+        Row: Bill;
+        Insert: Omit<Bill, "created_at" | "updated_at" | "summary_key">;
+        Update: Partial<Omit<Bill, "created_at" | "updated_at">>;
+      };
+      bill_summaries: {
+        Row: BillSummary;
+        Insert: {
+          bill_id: string;
+          summary_text: string;
+        };
+        Update: Partial<{
+          bill_id: string;
+          summary_text: string;
+        }>;
+      };
+      saved_bills: {
+        Row: SavedBill;
+        Insert: Omit<SavedBill, "id" | "created_at">;
+        Update: Partial<Omit<SavedBill, "id" | "created_at">>;
+      };
+    };
+  };
+}
 
 // Server-side Supabase client (uses service role key)
 // TODO: Replace with your Supabase URL and service role key
@@ -20,12 +53,12 @@ export function assembleLink(bill:CongressBill): string {
 
 // Create server client with service role key (bypasses RLS)
 export const supabase = supabaseUrl && supabaseServiceKey
-  ? createClient<Database>(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    })
+  ? createClient<SupabaseDatabase>(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
   : null;
 
 // Client-side Supabase client (uses anon key)
@@ -36,7 +69,7 @@ export function createClientSupabase() {
   if (!clientSupabaseUrl || !supabaseAnonKey) {
     throw new Error("Supabase client credentials not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY");
   }
-  return createClient<Database>(clientSupabaseUrl, supabaseAnonKey);
+  return createClient<SupabaseDatabase>(clientSupabaseUrl, supabaseAnonKey);
 }
 
 // Type-safe query helpers
@@ -115,70 +148,6 @@ export async function getBillSummary(
   return data as BillSummary;
 }
 
-export async function getUserEndorsements(
-  userId: string
-): Promise<Endorsement[]> {
-  if (!supabase) {
-    return [];
-  }
-
-  const { data, error } = await supabase
-    .from("endorsements")
-    .select("*")
-    .eq("user_id", userId);
-
-  if (error) {
-    console.error("Error fetching user endorsements:", error);
-    return [];
-  }
-
-  return (data || []) as Endorsement[];
-}
-
-export async function createEndorsement(
-  userId: string,
-  billId: string
-): Promise<Endorsement | null> {
-  if (!supabase) {
-    return null;
-  }
-
-  const { data, error } = await supabase
-    .from("endorsements")
-    .insert({ user_id: userId, bill_id: billId })
-    .select()
-    .single();
-
-  if (error) {
-    console.error("Error creating endorsement:", error);
-    return null;
-  }
-
-  return data as Endorsement;
-}
-
-export async function deleteEndorsement(
-  userId: string,
-  billId: string
-): Promise<boolean> {
-  if (!supabase) {
-    return false;
-  }
-
-  const { error } = await supabase
-    .from("endorsements")
-    .delete()
-    .eq("user_id", userId)
-    .eq("bill_id", billId);
-
-  if (error) {
-    console.error("Error deleting endorsement:", error);
-    return false;
-  }
-
-  return true;
-}
-
 export async function getUserSavedBills(userId: string): Promise<SavedBill[]> {
   if (!supabase) {
     return [];
@@ -197,37 +166,46 @@ export async function getUserSavedBills(userId: string): Promise<SavedBill[]> {
   return (data || []) as SavedBill[];
 }
 
-// Placeholder for database types
-// TODO: Generate this from Supabase: npx supabase gen types typescript --project-id <project-id> > lib/database.types.ts
-export interface Database {
-  public: {
-    Tables: {
-      users: {
-        Row: User;
-        Insert: Omit<User, "id" | "created_at" | "updated_at">;
-        Update: Partial<Omit<User, "id" | "created_at" | "updated_at">>;
-      };
-      bills: {
-        Row: Bill;
-        Insert: Omit<Bill, "created_at" | "updated_at">;
-        Update: Partial<Omit<Bill, "created_at" | "updated_at">>;
-      };
-      bill_summaries: {
-        Row: BillSummary;
-        Insert: Omit<BillSummary, "id" | "created_at">;
-        Update: Partial<Omit<BillSummary, "id" | "created_at">>;
-      };
-      endorsements: {
-        Row: Endorsement;
-        Insert: Omit<Endorsement, "id" | "created_at">;
-        Update: Partial<Endorsement>;
-      };
-      saved_bills: {
-        Row: SavedBill;
-        Insert: Omit<SavedBill, "id" | "created_at">;
-        Update: Partial<SavedBill>;
-      };
-    };
-  };
+export async function getAllBills(): Promise<Bill[]> {
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("bills")
+    .select("*")
+    .order("date", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching all bills:", error);
+    return [];
+  }
+
+  return (data || []) as Bill[];
+}
+
+export async function insertBillSummary(
+  billId: string,
+  summaryText: string
+): Promise<BillSummary | null> {
+  if (!supabase) {
+    return null;
+  }
+
+  // Workaround: TypeScript has issues inferring the Insert type when supabase is conditionally typed
+  // We know the correct type from our interface, so we use a type assertion
+  // The Insert type for bill_summaries is: { bill_id: string; summary_text: string }
+  const { data, error } = await supabase
+    .from("bill_summaries")
+    .insert({ bill_id: billId, summary_text: summaryText } as any)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error inserting bill summary:", error);
+    return null;
+  }
+
+  return data as BillSummary;
 }
 
