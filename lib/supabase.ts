@@ -498,36 +498,6 @@ export async function getAllBills(): Promise<Bill[]> {
   return (data || []) as Bill[];
 }
 
-export async function getBillsByCategory(): Promise<Record<string, Bill[]>> {
-  if (!supabase) {
-    return {};
-  }
-
-  // TODO: Add category field to bills table or filter by category if it exists
-  const { data, error } = await supabase
-    .from("bills")
-    .select("*")
-    .order("date", { ascending: false });
-
-  if (error) {
-    console.error("Error fetching bills by category:", error);
-    return {};
-  }
-
-  const bills = (data || []) as Bill[];
-  const byCategory: Record<string, Bill[]> = {};
-
-  bills.forEach((bill) => {
-    const category = bill.category || "Uncategorized";
-    if (!byCategory[category]) {
-      byCategory[category] = [];
-    }
-    byCategory[category].push(bill);
-  });
-
-  return byCategory;
-}
-
 export async function insertBillSummary(
   billId: string,
   summaryText: string,
