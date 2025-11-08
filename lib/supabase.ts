@@ -189,7 +189,8 @@ export async function userOpposeBill(userId: string, billId: string): Promise<vo
     .upsert({ user_id: userId, bill_id: billId, endorsed: false } as any, { onConflict: "user_id,bill_id" } as any);
 }
 
-export async function removeUserSupport(userId: string, billId: string): Promise<void> {
+//Removes the user's support/opposition for the bill
+export async function userRemoveBillOpinion(userId: string, billId: string): Promise<void> {
   if (!supabase) {
     throw new Error("Supabase client not configured");
   }
@@ -197,6 +198,47 @@ export async function removeUserSupport(userId: string, billId: string): Promise
   const { error } = await supabase
     .from("saved_bills")
     .delete().eq("user_id", userId).eq("bill_id", billId);
+}
+
+//TODO: THIS SHIT!!!!!
+export async function getBillOpinions(billId: string): Promise<SavedBill[]> {
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("saved_bills")
+    .select("*").eq("bill_id", billId);
+
+  if (error) {
+    console.error("Error fetching bill endorsements:", error);
+    return [];
+  }
+
+  return (data || []) as SavedBill[];
+}
+
+
+export async function getBillSponsors(billId: string): Promise<string[]> {
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("bills")
+    .select("sponsors")
+    .eq("id", billId)
+    .single();
+
+  if (error) {
+    console.error("Error fetching bill sponsors:", error);
+    return [];
+  }
+
+  // Extract sponsors array from the result object
+  // data will be { sponsors: string[] } or null
+  const result = data as { sponsors: string[] } | null;
+  return result?.sponsors || [];
 }
 
 

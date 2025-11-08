@@ -6,7 +6,7 @@
 
 import { config } from "dotenv";
 import path from "path";
-import { getBillById, assembleLink, userEndorseBill, userOpposeBill, removeUserSupport } from "@/lib/supabase";
+import { getBillById, assembleLink, userEndorseBill, userOpposeBill, getUserSavedBills, getBillSponsors } from "@/lib/supabase";
 import { Bill } from "@/types";
 
 // Load environment variables
@@ -122,39 +122,23 @@ async function testSupabase() {
     console.log(`   ✅ bill link: ${billLink}`);
     console.log();
 
-    // Test 6: Test getBillsByCategory function
-    // console.log("🔍 Test 6: Testing getBillsByCategory()...");
-    // try {
-    //   const billsByCategory = await getBillsByCategoryFn();
-    //   console.log(`   ✅ getBillsByCategory() successful!`);
-      
-    //   const categoryCount = Object.keys(billsByCategory).length;
-    //   console.log(`   📊 Categories found: ${categoryCount}`);
-      
-    //   if (categoryCount > 0) {
-    //     // Show summary of each category
-    //     Object.entries(billsByCategory).forEach(([category, bills]) => {
-    //       console.log(`   📁 ${category}: ${bills.length} bill(s)`);
-    //     });
-        
-    //     // Show first bill from first category as example
-    //     const firstCategory = Object.keys(billsByCategory)[0];
-    //     const firstBills = billsByCategory[firstCategory];
-    //     if (firstBills && firstBills.length > 0) {
-    //       console.log(`   📝 Example bill from "${firstCategory}": ${firstBills[0].title}`);
-    //     }
-    //   } else {
-    //     console.log(`   ⚠️  No bills found in database`);
-    //   }
-    // } catch (error: any) {
-    //   console.error(`   ❌ getBillsByCategory() error: ${error.message}`);
-    // }
-    // console.log();
+    console.log("Test getUserSavedBills");
+    const userSavedBills = await getUserSavedBills("a9f659e7-57d2-4a1b-b4f2-22d167c6e0a5");
+    console.log(`   ✅ user saved bills: ${userSavedBills.forEach(bill => console.log(`${bill.bill_id}`))}`);
+    console.log();
+    
 
-    const endorsing = await userEndorseBill("e4a0ee73-3b8b-4248-bafd-9a03df94a8fb", "hr1234-118");
-    console.log(`   ✅ endorsing: ${endorsing}`);
-    const removing = await removeUserSupport("e4a0ee73-3b8b-4248-bafd-9a03df94a8fb", "hr1234-118");
-    console.log(`   ✅ removing: ${removing}`);
+    const endorsing1 = await userEndorseBill("a9f659e7-57d2-4a1b-b4f2-22d167c6e0a5", "hr1234-118");
+    console.log(`   ✅ endorsing: ${endorsing1}`);
+    const endorsing2 = await userOpposeBill("a9f659e7-57d2-4a1b-b4f2-22d167c6e0a5", "119_S_3060");
+    console.log(`   ✅ endorsing: ${endorsing2}`);
+
+    const sponsors = await getBillSponsors("119_S_2403");
+    sponsors.forEach(sponsor => console.log(`   ✅ sponsor: ${JSON.stringify(sponsor)}`));
+    console.log();
+
+
+    
     
     // const opposing = await userOpposeBill("e4a0ee73-3b8b-4248-bafd-9a03df94a8fb", "hr1234-118");
     // console.log(`   ✅ opposing: ${opposing}`);
