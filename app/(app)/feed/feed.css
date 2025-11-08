@@ -84,9 +84,18 @@
   border-color: #0474b6;
 }
 
-.scrollArrow:disabled {
-  opacity: 0.5;
+.scrollArrow:disabled,
+.scrollArrow.disabled {
+  opacity: 0.3;
   cursor: not-allowed;
+  background-color: #1a1a1a;
+  border-color: #2a2a2a;
+}
+
+.scrollArrow:disabled:hover,
+.scrollArrow.disabled:hover {
+  background-color: #1a1a1a;
+  border-color: #2a2a2a;
 }
 
 .scrollArrowLeft {
@@ -95,5 +104,43 @@
 
 .scrollArrowRight {
   right: 0;
+}
+
+/* Media query for smaller screens - remove arrows and show scrollbar */
+@media (max-width: 768px) {
+  .scrollArrow {
+    display: none;
+  }
+
+  .billRow {
+    gap: 0;
+  }
+
+  .billCardsContainer {
+    overflow-x: auto;
+    width: 100%;
+    max-width: 100%;
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: #3a3a3a #1a1a1a; /* Firefox */
+  }
+
+  .billCardsContainer::-webkit-scrollbar {
+    display: block; /* Chrome, Safari, Opera */
+    height: 8px;
+  }
+
+  .billCardsContainer::-webkit-scrollbar-track {
+    background: #1a1a1a;
+    border-radius: 4px;
+  }
+
+  .billCardsContainer::-webkit-scrollbar-thumb {
+    background: #3a3a3a;
+    border-radius: 4px;
+  }
+
+  .billCardsContainer::-webkit-scrollbar-thumb:hover {
+    background: #4a4a4a;
+  }
 }
 
