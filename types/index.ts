@@ -31,13 +31,11 @@ export interface Bill {
     origin: string | null;
     url: string | null;
     sponsors: string[] | null;
-    bill_text: string;
     created_at: string;
     updated_at: string;
     // Extended fields for UI
     category?: string;
-    description?: string; // One-line description
-    summary?: string; // 5-7 sentence summary
+    bill_text: string;
     affectedGroups?: string[];
     sponsorDetails?: Sponsor[];
 }
@@ -49,7 +47,7 @@ export interface BillSummary {
     created_at: string;
 }
 
-export interface SavedBill {
+export interface Endorsement {
     id: string;
     user_id: string;
     bill_id: string;
@@ -57,8 +55,11 @@ export interface SavedBill {
     created_at: string;
 }
 
-export interface BillWithSummary extends Bill {
-    summary?: BillSummary;
+export interface SavedBill {
+    id: string;
+    user_id: string;
+    bill_id: string;
+    created_at: string;
 }
 
 export interface PaginatedResponse<T> {

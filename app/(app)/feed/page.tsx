@@ -1,25 +1,23 @@
+<<<<<<< HEAD
 "use client";
 
 import { useState, useRef, useEffect } from "react";
 import BillCard from "@/components/bills/BillCard";
+=======
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth";
+import { getUserById, getBillsByCategory } from "@/lib/supabase";
+import FeedClient from "./FeedClient";
+>>>>>>> dev
 import type { Bill } from "@/types";
-import "./feed.css";
 
-const categories = [
-  "Health",
-  "Environment",
-  "Armed Services",
-  "Economy",
-  "Education",
-  "Technology",
-  "Immigration",
-  "Agriculture and Food",
-  "Government Operations",
-  "Taxation",
-  "Civil Rights",
-  "Criminal Justice",
-];
+export default async function FeedPage() {
+  const session = await getSession();
+  if (!session?.user?.id) {
+    redirect("/login");
+  }
 
+<<<<<<< HEAD
 export default function FeedPage() {
   const [billsByCategory, setBillsByCategory] = useState<Record<string, Bill[]>>({});
   const [loading, setLoading] = useState(true);
@@ -27,24 +25,42 @@ export default function FeedPage() {
   const [expandedCardIndex, setExpandedCardIndex] = useState<Record<string, number>>({});
   const scrollRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [arrowStates, setArrowStates] = useState<Record<string, { left: boolean; right: boolean }>>({});
+=======
+  const user = await getUserById(session.user.id);
+  if (!user) {
+    redirect("/login");
+  }
+>>>>>>> dev
 
-  // Update arrow states based on scroll position
-  const updateArrowStates = (category: string) => {
-    const container = scrollRefs.current[category];
-    if (!container) return;
+  const preferredCategories = user.topics || [];
+  const allCategoriesList = [
+    "Health",
+    "Environment",
+    "Armed Services",
+    "Economy",
+    "Education",
+    "Technology",
+    "Immigration",
+    "Agriculture and Food",
+    "Government Operations",
+    "Taxation",
+    "Civil Rights",
+    "Criminal Justice",
+  ];
 
-    const isAtStart = container.scrollLeft <= 0;
-    const isAtEnd = container.scrollLeft >= container.scrollWidth - container.clientWidth - 1; // -1 for rounding errors
+  // Filter out preferred categories from remaining
+  const remainingCategories = allCategoriesList.filter(
+    (category) => !preferredCategories.includes(category)
+  );
 
-    setArrowStates((prev) => ({
-      ...prev,
-      [category]: {
-        left: isAtStart,
-        right: isAtEnd,
-      },
-    }));
-  };
+  // Fetch bills for preferred categories
+  const billsByCategoryPreferred = new Map<string, Bill[]>();
+  for (const category of preferredCategories) {
+    const bills = await getBillsByCategory(category);
+    billsByCategoryPreferred.set(category, bills);
+  }
 
+<<<<<<< HEAD
   // Fetch bills from API
   useEffect(() => {
     async function fetchBills() {
@@ -182,68 +198,21 @@ export default function FeedPage() {
       return newState;
     });
   };
+=======
+  // Fetch bills for remaining categories
+  const billsByCategoryRemaining = new Map<string, Bill[]>();
+  for (const category of remainingCategories) {
+    const bills = await getBillsByCategory(category);
+    billsByCategoryRemaining.set(category, bills);
+  }
+>>>>>>> dev
 
   return (
-    <div className="feedContainer">
-      <div className="feedContent">
-        <div className="feedHeader">
-          <h1 className="feedTitle">Current Bills in Congress</h1>
-          <p className="feedSubtitle">Stay informed about legislation that matters to you.</p>
-        </div>
-
-        {categories.map((category) => {
-          const bills = billsByCategory[category] || [];
-          const expandedIndex = expandedCardIndex[category];
-          const isLeftDisabled = arrowStates[category]?.left ?? false;
-          const isRightDisabled = arrowStates[category]?.right ?? false;
-
-          return (
-            <div key={category} className="categorySection">
-              <h2 className="categoryTitle">{category}</h2>
-              <div className="billRow" onMouseLeave={() => handleRowLeave(category)}>
-                <button
-                  className={`scrollArrow scrollArrowLeft ${isLeftDisabled ? "disabled" : ""}`}
-                  onClick={() => scrollLeft(category)}
-                  disabled={isLeftDisabled}
-                  aria-label={`Scroll ${category} left`}
-                >
-                  ‹
-                </button>
-                <div
-                  className="billCardsContainer"
-                  ref={(el) => {
-                    scrollRefs.current[category] = el;
-                    if (el) {
-                      // Update arrow states when container is mounted
-                      setTimeout(() => updateArrowStates(category), 0);
-                    }
-                  }}
-                >
-                  {bills.map((bill, index) => (
-                    <div
-                      key={bill.id}
-                      onMouseEnter={() => handleCardHover(category, index)}
-                    >
-                      <BillCard
-                        bill={bill}
-                        isExpanded={expandedIndex === index}
-                      />
-                    </div>
-                  ))}
-                </div>
-                <button
-                  className={`scrollArrow scrollArrowRight ${isRightDisabled ? "disabled" : ""}`}
-                  onClick={() => scrollRight(category)}
-                  disabled={isRightDisabled}
-                  aria-label={`Scroll ${category} right`}
-                >
-                  ›
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+    <FeedClient
+      preferredCategories={preferredCategories}
+      remainingCategories={remainingCategories}
+      billsByCategoryPreferred={billsByCategoryPreferred}
+      billsByCategoryRemaining={billsByCategoryRemaining}
+    />
   );
 }

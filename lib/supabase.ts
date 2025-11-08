@@ -1,10 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
-import type { Bill, BillSummary, SavedBill, User } from "@/types";
+import type { Bill, BillSummary, Endorsement, SavedBill, User } from "@/types";
 import { CongressBill } from "./congress/clients";
 import { config } from "dotenv";
 import path from "path";
 
 config({ path: path.join(process.cwd(), ".env") });
+import { generateBillSummaryOpenRouter } from "./ai/openrouter";
+import type { Database } from "./database.types";
 
 // Placeholder for database types
 // TODO: Generate this from Supabase: npx supabase gen types typescript --project-id <project-id> > lib/database.types.ts
@@ -58,7 +60,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 // Create server client with service role key (bypasses RLS)
 export const supabase = supabaseUrl && supabaseServiceKey
-  ? createClient<SupabaseDatabase>(supabaseUrl, supabaseServiceKey, {
+  ? createClient<Database>(supabaseUrl, supabaseServiceKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
@@ -74,11 +76,11 @@ export function createClientSupabase() {
   if (!clientSupabaseUrl || !supabaseAnonKey) {
     throw new Error("Supabase client credentials not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY");
   }
-  return createClient<SupabaseDatabase>(clientSupabaseUrl, supabaseAnonKey);
+  return createClient<Database>(clientSupabaseUrl, supabaseAnonKey);
 }
 
 // Type-safe query helpers
-
+// Bills table
 export async function getBills(
   page: number = 1,
   pageSize: number = 20
@@ -105,6 +107,25 @@ export async function getBills(
     data: (data || []) as Bill[],
     total: count || 0,
   };
+}
+
+export async function getBillsWithLimit(limit: number): Promise<Bill[]> {
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("bills")
+    .select("*")
+    .order("date", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("Error fetching bills with limit:", error);
+    return [];
+  }
+
+  return (data || []) as Bill[];
 }
 
 export async function getBillById(billId: string): Promise<Bill | null> {
@@ -472,7 +493,8 @@ export async function getBillsByCategory(): Promise<Record<string, Bill[]>> {
 
 export async function insertBillSummary(
   billId: string,
-  summaryText: string
+  summaryText: string,
+  oneLiner: string
 ): Promise<BillSummary | null> {
   if (!supabase) {
     return null;
@@ -483,15 +505,18 @@ export async function insertBillSummary(
   // The Insert type for bill_summaries is: { bill_id: string; summary_text: string }
   const { data, error } = await supabase
     .from("bill_summaries")
-    .insert({ bill_id: billId, summary_text: summaryText } as any)
+    .insert({ bill_id: billId, summary_text: summaryText, one_liner: oneLiner } as any)
     .select()
     .single();
-
   if (error) {
     console.error("Error inserting bill summary:", error);
     return null;
   }
-
+  if (!data) {
+    console.error("No data returned from insert bill summary");
+    return null;
+  }
+  await updateBillWithSummaryKey(billId, (data as BillSummary).id);
   return data as BillSummary;
 }
 
@@ -558,5 +583,25 @@ export function assembleLink(bill: Bill): string {
     console.error("assembleLink: Error assembling link for bill", bill.id, error);
     return "https://www.congress.gov/";
   }
+}
+
+export async function updateBillWithSummaryKey(billId: string, summaryKey: string): Promise<Bill | null> {
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("bills")
+    .update({ summary_key: summaryKey } as never)
+    .eq("id", billId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating bill summary key:", error);
+    return null;
+  }
+
+  return data as Bill;
 }
 

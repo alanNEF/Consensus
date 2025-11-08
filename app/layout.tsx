@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import ConditionalTopNav from "@/components/nav/ConditionalTopNav";
+import SessionProvider from "@/components/providers/SessionProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,10 +19,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ConditionalTopNav />
-        <main style={{ backgroundColor: "#1a1a1a", minHeight: "100vh" }}>
-          {children}
-        </main>
+        <SessionProvider>
+          <ConditionalTopNav />
+          <main style={{ backgroundColor: "#1a1a1a", minHeight: "100vh" }}>
+            {children}
+          </main>
+        </SessionProvider>
       </body>
     </html>
   );

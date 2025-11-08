@@ -5,6 +5,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT UNIQUE NOT NULL,
+  hashed_password TEXT NOT NULL,
   name TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -23,7 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS bills (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
-  summary_key TEXT,
+  summary_key TEXT UNIQUE,
   date DATE NOT NULL,
   status TEXT NOT NULL,
   origin TEXT NOT NULL,
@@ -38,6 +39,7 @@ CREATE TABLE IF NOT EXISTS bills (
 CREATE TABLE IF NOT EXISTS bill_summaries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   bill_id TEXT NOT NULL REFERENCES bills(id) ON DELETE CASCADE,
+  one_liner TEXT NOT NULL,
   summary_text TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -56,7 +58,6 @@ CREATE TABLE IF NOT EXISTS saved_bills (
 CREATE INDEX IF NOT EXISTS idx_bills_date ON bills(date DESC);
 CREATE INDEX IF NOT EXISTS idx_bills_status ON bills(status);
 CREATE INDEX IF NOT EXISTS idx_saved_bills_user_id ON saved_bills(user_id);
-CREATE INDEX IF NOT EXISTS idx_saved_bills_user_id ON saved_bills(bill_id);
 
 -- Vector similarity search index (using ivfflat for pgvector)
 -- Note: Create this after inserting some data for better performance
