@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import type { Bill, BillSummary, Endorsement, SavedBill, User } from "@/types";
+import type { Bill, BillSummary, Demographics, Endorsement, SavedBill, User } from "@/types";
 import { generateBillSummaryOpenRouter } from "./ai/openrouter";
 import type { Database } from "./database.types";
 
@@ -183,6 +183,25 @@ export async function getUserSavedBills(userId: string): Promise<SavedBill[]> {
   return (data || []) as SavedBill[];
 }
 
+export async function getUserById(userId: string): Promise<User | null> {
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", userId)
+    .single();
+
+  if (error) {
+    console.error("Error fetching user by ID:", error);
+    return null;
+  }
+
+  return data as User;
+}
+
 export async function getBillsByCategory(category: string, count: number = 15): Promise<Bill[]> {
   if (!supabase) {
     return [];
@@ -219,6 +238,48 @@ export async function getAllBills(): Promise<Bill[]> {
 
   return (data || []) as Bill[];
 }
+
+// export async function updateUserDemographics(userId: string, demographics: Demographics): Promise<void> {
+//   if (!supabase) {
+//     return;
+//   }
+//   const updatePayload:Demographics = {
+//     residency: demographics.residency,
+//     topics: demographics.topics,
+//     race: demographics.race,
+//     religion: demographics.religion,
+//     gender: demographics.gender,
+//     age_range: demographics.age_range,
+//     party: demographics.party,
+//     income: demographics.income,
+//     education: demographics.education,
+//   };
+
+  
+
+//   const { data, error } = await supabase
+//     .from("users")
+//     .update(updatePayload as never)
+//     .eq("id", userId)
+
+//   if (error) {
+//     console.error("Error updating user demographics:", error);
+//     return;
+//   }
+
+//   return;
+// }
+
+// export async function updateUserRace(userId: string, race: string): Promise<void> {
+//   if (!supabase) {
+//     return "error";
+//   }
+//   const { data, error } = await supabase
+//     .from("users")
+//     .update({ race: race } as never)
+//     .eq("id", userId)
+// }
+
 
 export async function insertBillSummary(
   billId: string,

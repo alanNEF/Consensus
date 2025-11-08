@@ -33,18 +33,33 @@ export async function GET() {
             );
         }
 
+        // Type assertion to help TypeScript know user keys (fix "never" error)
+        const typedUser = user as {
+            email?: string | null;
+            name?: string | null;
+            residency?: string | null;
+            topics?: string[] | null;
+            race?: string | null;
+            religion?: string | null;
+            gender?: string | null;
+            age_range?: string | null;
+            party?: string | null;
+            income?: string | null;
+            education?: string | null;
+        };
+
         return NextResponse.json({
-            email: user.email,
-            name: user.name,
-            residency: user.residency,
-            topics: user.topics || [],
-            race: user.race || null,
-            religion: user.religion || null,
-            gender: user.gender || null,
-            age_range: user.age_range || null,
-            party: user.party || null,
-            income: user.income || null,
-            education: user.education || null,
+            email: typedUser.email,
+            name: typedUser.name,
+            residency: typedUser.residency,
+            topics: typedUser.topics || [],
+            race: typedUser.race || null,
+            religion: typedUser.religion || null,
+            gender: typedUser.gender || null,
+            age_range: typedUser.age_range || null,
+            party: typedUser.party || null,
+            income: typedUser.income || null,
+            education: typedUser.education || null,
         });
     } catch (error: any) {
         console.error("Error fetching user profile:", error);
@@ -116,14 +131,32 @@ export async function PUT(request: Request) {
             updateData.education = education;
         }
 
-        const { data: updatedUser, error } = await supabase
+        // Define a type for the user profile fields we expect
+        type UserProfile = {
+            id: string;
+            email: string;
+            name: string | null;
+            residency: string | null;
+            topics: string[] | null;
+            race: string | null;
+            religion: string | null;
+            gender: string | null;
+            age_range: string | null;
+            party: string | null;
+            income: string | null;
+            education: string | null;
+        };
+
+        const { data, error } = await supabase
             .from("users")
-            .update(updateData)
+            .update(updateData as never)
             .eq("id", session.user.id)
             .select("id, email, name, residency, topics, race, religion, gender, age_range, party, income, education")
             .single();
 
-        if (error) {
+        const updatedUser = data as UserProfile | null;
+
+        if (error || !updatedUser) {
             console.error("Supabase update error:", error);
             return NextResponse.json(
                 { error: "Failed to update profile" },
