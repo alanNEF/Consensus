@@ -6,7 +6,6 @@
 
 import { getAllBills, getBillSummary, insertBillSummary } from "@/lib/supabase";
 import { generateBillSummaryOpenRouter } from "@/lib/ai/openrouter";
-
 async function summarizeAllBills(options: { force?: boolean; skipExisting?: boolean } = {}) {
     const { force = false, skipExisting = true } = options;
 
@@ -91,6 +90,21 @@ async function summarizeAllBills(options: { force?: boolean; skipExisting?: bool
     console.log(`   ❌ Errors: ${errors}`);
     console.log(`   📋 Total: ${bills.length}`);
     console.log("=".repeat(50) + "\n");
+}
+
+async function summarizeBillsTest() {
+    const bills = await getAllBills();
+    for (const bill of bills) {
+        console.log("Summarizing bill: " + bill.id);
+        console.log(bill.id);
+        console.log(bill.title);
+        console.log(bill.bill_text);
+        console.log(bill.date);
+        console.log(bill.status);
+        console.log(bill.origin);
+        console.log(bill.url);
+        console.log(bill.sponsors);
+    }
 }
 
 // Parse command line arguments

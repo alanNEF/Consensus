@@ -21,7 +21,7 @@ export async function generateBillSummaryOpenRouter(
 
   try {
     const message = await openrouter.chat.send({
-      model: "anthropic/claude-sonnet-4.5",
+      model: "google/gemini-2.5-flash",
       messages: [
         {
           role: "system",
@@ -40,7 +40,7 @@ export async function generateBillSummaryOpenRouter(
                       Return ONLY a valid JSON object with this exact structure:
                       {
                         "bill_title": "string (official title if present, or 'Not specified')",
-                        "one_liner": "string (one sentence describing the bill's main purpose, max 25 words)",
+                        "one_liner": "string (one sentence describing the bill's main purpose, max 25 words, avoid repeating the bill title)",
                         "summary": "string (single paragraph summary, ≤200 words, covering: purpose, what it changes/requires, 
                         who is affected, agencies involved, funding/costs, timelines, penalties/reporting rules)"
                       }
@@ -52,6 +52,23 @@ export async function generateBillSummaryOpenRouter(
                       ${billText}`
         }
       ],
+      responseFormat: {
+        type: "json_schema",
+        jsonSchema: {
+          name: "bill_summary",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              bill_title: { type: "string", description: "The official title of the bill" },
+              one_liner: { type: "string", description: "one sentence describing the bill's main purpose, max 25 words, avoid repeating the bill title" },
+              summary: { type: "string", description: "single paragraph summary, ≤200 words, covering: purpose, what it changes/requires, who is affected, agencies involved, funding/costs, timelines, penalties/reporting rules" },
+            },
+            required: ["bill_title", "one_liner", "summary"],
+            additionalProperties: false,
+          },
+        },
+      },
     });
 
     return message.choices[0].message.content as string;
