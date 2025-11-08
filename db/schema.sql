@@ -55,7 +55,6 @@ CREATE TABLE IF NOT EXISTS saved_bills (
 CREATE INDEX IF NOT EXISTS idx_bills_date ON bills(date DESC);
 CREATE INDEX IF NOT EXISTS idx_bills_status ON bills(status);
 CREATE INDEX IF NOT EXISTS idx_saved_bills_user_id ON saved_bills(user_id);
-CREATE INDEX IF NOT EXISTS idx_saved_bills_user_id ON saved_bills(bill_id);
 
 -- Vector similarity search index (using ivfflat for pgvector)
 -- Note: Create this after inserting some data for better performance
