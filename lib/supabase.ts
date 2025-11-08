@@ -200,22 +200,200 @@ export async function userRemoveBillOpinion(userId: string, billId: string): Pro
     .delete().eq("user_id", userId).eq("bill_id", billId);
 }
 
-//TODO: THIS SHIT!!!!!
-export async function getBillOpinions(billId: string): Promise<SavedBill[]> {
+/**
+ * Get demographics of all users who endorse a specific bill
+ * Returns saved_bills records with joined user demographic data
+ */
+export async function getBillEndorsementDemographics(billId: string): Promise<Array<SavedBill & { user: Pick<User, "race" | "religion" | "gender" | "age_range" | "party" | "income" | "education" | "residency" | "topics"> }>> {
   if (!supabase) {
     return [];
   }
 
   const { data, error } = await supabase
     .from("saved_bills")
-    .select("*").eq("bill_id", billId);
+    .select(`
+      *,
+      users (
+        race,
+        religion,
+        gender,
+        age_range,
+        party,
+        income,
+        education,
+        residency,
+        topics
+      )
+    `)
+    .eq("bill_id", billId)
+    .eq("endorsed", true);
 
   if (error) {
-    console.error("Error fetching bill endorsements:", error);
+    console.error("Error fetching bill endorsement demographics:", error);
     return [];
   }
 
-  return (data || []) as SavedBill[];
+  // Transform the data to match expected structure
+  return (data || []).map((item: any) => ({
+    id: item.id,
+    user_id: item.user_id,
+    bill_id: item.bill_id,
+    endorsed: item.endorsed,
+    created_at: item.created_at,
+    user: item.users || {},
+  })) as Array<SavedBill & { user: Pick<User, "race" | "religion" | "gender" | "age_range" | "party" | "income" | "education" | "residency" | "topics"> }>;
+}
+
+/**
+ * Get count of each demographic category for users who endorse a bill
+ * Returns an object with counts for each demographic field
+ */
+export async function getBillEndorsementDemographicsCount(billId: string): Promise<Record<string, Record<string, number>>> {
+  const demographics = await getBillEndorsementDemographics(billId);
+  
+  // Initialize counts object for each demographic field
+  const counts: Record<string, Record<string, number>> = {
+    race: {},
+    religion: {},
+    gender: {},
+    age_range: {},
+    party: {},
+    income: {},
+    education: {},
+    residency: {},
+    topics: {},
+  };
+
+  // Count each demographic category
+  demographics.forEach((item) => {
+    const user = item.user;
+    
+    // Count single-value demographics
+    const singleValueFields = [
+      "race",
+      "religion",
+      "gender",
+      "age_range",
+      "party",
+      "income",
+      "education",
+      "residency",
+    ] as const;
+
+    singleValueFields.forEach((field) => {
+      const value = user[field];
+      if (value && typeof value === "string") {
+        counts[field][value] = (counts[field][value] || 0) + 1;
+      }
+    });
+
+    // Count topics (array field)
+    if (user.topics && Array.isArray(user.topics)) {
+      user.topics.forEach((topic) => {
+        if (topic) {
+          counts.topics[topic] = (counts.topics[topic] || 0) + 1;
+        }
+      });
+    }
+  });
+
+  return counts;
+}
+
+export async function getBillOppositionDemographics(billId: string): Promise<Array<SavedBill & { user: Pick<User, "race" | "religion" | "gender" | "age_range" | "party" | "income" | "education" | "residency" | "topics"> }>> {
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("saved_bills")
+    .select(`
+      *,
+      users (
+        race,
+        religion,
+        gender,
+        age_range,
+        party,
+        income,
+        education,
+        residency,
+        topics
+      )
+    `)
+    .eq("bill_id", billId)
+    .eq("endorsed", false);
+
+  if (error) {
+    console.error("Error fetching bill endorsement demographics:", error);
+    return [];
+  }
+
+  // Transform the data to match expected structure
+  return (data || []).map((item: any) => ({
+    id: item.id,
+    user_id: item.user_id,
+    bill_id: item.bill_id,
+    endorsed: item.endorsed,
+    created_at: item.created_at,
+    user: item.users || {},
+  })) as Array<SavedBill & { user: Pick<User, "race" | "religion" | "gender" | "age_range" | "party" | "income" | "education" | "residency" | "topics"> }>;
+}
+
+/**
+ * Get count of each demographic category for users who endorse a bill
+ * Returns an object with counts for each demographic field
+ */
+export async function getBillOppositionDemographicsCount(billId: string): Promise<Record<string, Record<string, number>>> {
+  const demographics = await getBillOppositionDemographics(billId);
+  
+  // Initialize counts object for each demographic field
+  const counts: Record<string, Record<string, number>> = {
+    race: {},
+    religion: {},
+    gender: {},
+    age_range: {},
+    party: {},
+    income: {},
+    education: {},
+    residency: {},
+    topics: {},
+  };
+
+  // Count each demographic category
+  demographics.forEach((item) => {
+    const user = item.user;
+    
+    // Count single-value demographics
+    const singleValueFields = [
+      "race",
+      "religion",
+      "gender",
+      "age_range",
+      "party",
+      "income",
+      "education",
+      "residency",
+    ] as const;
+
+    singleValueFields.forEach((field) => {
+      const value = user[field];
+      if (value && typeof value === "string") {
+        counts[field][value] = (counts[field][value] || 0) + 1;
+      }
+    });
+
+    // Count topics (array field)
+    if (user.topics && Array.isArray(user.topics)) {
+      user.topics.forEach((topic) => {
+        if (topic) {
+          counts.topics[topic] = (counts.topics[topic] || 0) + 1;
+        }
+      });
+    }
+  });
+
+  return counts;
 }
 
 

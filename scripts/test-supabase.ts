@@ -6,7 +6,7 @@
 
 import { config } from "dotenv";
 import path from "path";
-import { getBillById, assembleLink, userEndorseBill, userOpposeBill, getUserSavedBills, getBillSponsors } from "@/lib/supabase";
+import { getBillById, assembleLink, userEndorseBill, userOpposeBill, getUserSavedBills, getBillSponsors, getBillEndorsementDemographics, getBillEndorsementDemographicsCount } from "@/lib/supabase";
 import { Bill } from "@/types";
 
 // Load environment variables
@@ -128,16 +128,16 @@ async function testSupabase() {
     console.log();
     
 
-    const endorsing1 = await userEndorseBill("a9f659e7-57d2-4a1b-b4f2-22d167c6e0a5", "hr1234-118");
-    console.log(`   ✅ endorsing: ${endorsing1}`);
-    const endorsing2 = await userOpposeBill("a9f659e7-57d2-4a1b-b4f2-22d167c6e0a5", "119_S_3060");
-    console.log(`   ✅ endorsing: ${endorsing2}`);
+    await userEndorseBill("cb8f2225-f8e0-4a29-90df-3d2bc3af60b5", "hr1234-118");
+    await userEndorseBill("38a5b373-9164-4406-a503-4813568a5003", "hr1234-118");
+    await userEndorseBill("c41dd100-b550-4025-8dd7-d1ad942ec4a4", "hr1234-118");
 
-    const sponsors = await getBillSponsors("119_S_2403");
-    sponsors.forEach(sponsor => console.log(`   ✅ sponsor: ${JSON.stringify(sponsor)}`));
-    console.log();
+    // const sponsors = await getBillSponsors("119_S_2403");
+    // sponsors.forEach(sponsor => console.log(`   ✅ sponsor: ${JSON.stringify(sponsor)}`));
+    // console.log();
 
-
+    const endorsementsDemographics = await getBillEndorsementDemographicsCount("hr1234-118");
+    Object.entries(endorsementsDemographics).forEach(([key, value]) => console.log(`   ✅ ${key}: ${JSON.stringify(value)}`));
     
     
     // const opposing = await userOpposeBill("e4a0ee73-3b8b-4248-bafd-9a03df94a8fb", "hr1234-118");
