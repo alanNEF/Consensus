@@ -10,7 +10,7 @@ const CONGRESS_GOV_BASE =
 
 if (!CONGRESS_GOV_API_KEY) {
   console.warn(
-    "⚠️  Congress.gov API key not configured. API calls will return mock data."
+    "⚠️  Congress.gov API key not configured. API calls will fail."
   );
 }
 
@@ -47,8 +47,9 @@ export async function fetchBillsFromCongress(
   limit: number = 20
 ): Promise<CongressBill[]> {
   if (!CONGRESS_GOV_API_KEY) {
-    // Return mock data if API key is not configured
-    return getMockBills();
+    // TODO: Return empty array or throw error when API key is not configured
+    // Consider fetching from Supabase as fallback
+    throw new Error("Congress.gov API key not configured");
   }
 
   try {
@@ -72,8 +73,8 @@ export async function fetchBillsFromCongress(
     return data.bills || [];
   } catch (error) {
     console.error("Error fetching bills from Congress.gov:", error);
-    // Fallback to mock data on error
-    return getMockBills();
+    // TODO: Consider fetching from Supabase as fallback
+    throw error;
   }
 }
 
@@ -90,8 +91,9 @@ export async function fetchBillFromCongress(
   billNumber: string
 ): Promise<CongressBill | null> {
   if (!CONGRESS_GOV_API_KEY) {
-    // Return mock bill if API key is not configured
-    return getMockBills()[0] || null;
+    // TODO: Return null or throw error when API key is not configured
+    // Consider fetching from Supabase as fallback
+    throw new Error("Congress.gov API key not configured");
   }
 
   try {
@@ -113,57 +115,9 @@ export async function fetchBillFromCongress(
     return data.bill || null;
   } catch (error) {
     console.error("Error fetching bill from Congress.gov:", error);
+    // TODO: Consider fetching from Supabase as fallback
     return null;
   }
 }
 
-/**
- * Mock bills for development/testing
- */
-function getMockBills(): CongressBill[] {
-  return [
-    {
-      number: "1234",
-      title: "Infrastructure Investment and Jobs Act",
-      type: "hr",
-      congress: 118,
-      url: "https://www.congress.gov/bill/118th-congress/house-bill/1234",
-      updateDate: "2024-01-15",
-      latestAction: {
-        text: "Passed House",
-        actionDate: "2024-01-15",
-      },
-      originChamber: "House",
-      sponsors: [
-        {
-          bioguideId: "S000123",
-          fullName: "Jane Smith",
-          party: "D",
-          state: "CA",
-        },
-      ],
-    },
-    {
-      number: "5678",
-      title: "Climate Action and Clean Energy Bill",
-      type: "s",
-      congress: 118,
-      url: "https://www.congress.gov/bill/118th-congress/senate-bill/5678",
-      updateDate: "2024-02-20",
-      latestAction: {
-        text: "In Committee",
-        actionDate: "2024-02-20",
-      },
-      originChamber: "Senate",
-      sponsors: [
-        {
-          bioguideId: "J000456",
-          fullName: "Alice Johnson",
-          party: "D",
-          state: "NY",
-        },
-      ],
-    },
-  ];
-}
 

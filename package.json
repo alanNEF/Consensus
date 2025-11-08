@@ -42,6 +42,7 @@
     "dotenv": "^17.2.3",
     "eslint": "^8.56.0",
     "eslint-config-next": "^14.2.0",
+    "supabase": "^2.54.11",
     "tsx": "^4.7.1"
   }
 }
