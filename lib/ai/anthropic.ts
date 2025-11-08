@@ -1,17 +1,9 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { OpenRouter } from "@openrouter/sdk";
 
 // Initialize Anthropic client (returns null if key is missing)
-const anthropic = process.env.ANTHROPIC_API_KEY
-  ? new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    })
-  : null;
-
-if (!anthropic) {
-  console.warn(
-    "⚠️  Anthropic API key not configured. AI features will return mock responses."
-  );
-}
+const openrouter = new OpenRouter({
+  apiKey: process.env.OPENROUTER_API_KEY,
+});
 
 /**
  * Generate an AI summary for a bill using Anthropic Claude
@@ -23,38 +15,48 @@ export async function generateBillSummaryAnthropic(
   billText: string,
   billTitle: string
 ): Promise<string> {
-  if (!anthropic) {
-    // Return mock summary if Anthropic is not configured
-    return `[MOCK SUMMARY] This is a placeholder summary for "${billTitle}" using Anthropic Claude.
-    
-To enable AI summaries, please set the ANTHROPIC_API_KEY environment variable.
-    
-The actual summary would analyze the bill's key provisions, impact, and implications in plain language.`;
+  if (!openrouter) {
+    throw new Error("Anthropic API key not configured");
   }
 
   try {
-    const message = await anthropic.messages.create({
-      model: "claude-3-5-sonnet-20241022",
-      max_tokens: 500,
-      system:
-        "You are a helpful assistant that explains U.S. congressional bills in plain, accessible language. Focus on what the bill does, who it affects, and why it matters.",
+    const message = await openrouter.chat.send({
+      model: "anthropic/claude-sonnet-4.5",
       messages: [
         {
-          role: "user",
-          content: `Please provide a clear, concise summary of this bill:\n\nTitle: ${billTitle}\n\nText: ${billText}`,
+          role: "system",
+          content: `You are a careful, neutral legislative editor. Write in plain English
+            at a U.S. 10th-grade reading level. Be concise, accurate, and avoid legal jargon.
+            Do not invent details. If something isn't stated, write \"Not specified.\"`
         },
+        {
+          role: "user",
+          content: `Summarize the U.S. Congress bill below in no more than 200 words.
+                      Keep only the most important concepts: the bill's purpose, what it changes or requires, who is affected,
+                      which agencies are involved, funding/costs, key timelines, and any penalties or reporting rules. Mention 
+                      the bill number and title if present. Use short sentences and active voice. Stay neutral.
+
+                      Output format:
+                      Return ONLY a valid JSON object with this exact structure:
+                      {
+                        "bill_title": "string (official title if present, or 'Not specified')",
+                        "one_liner": "string (one sentence describing the bill's main purpose, max 25 words)",
+                        "summary": "string (single paragraph summary, ≤200 words, covering: purpose, what it changes/requires, 
+                        who is affected, agencies involved, funding/costs, timelines, penalties/reporting rules)"
+                      }
+
+                      Do not include any text outside the JSON object. Do not use markdown code blocks or backticks.
+                      Do not include any other text or commentary.
+                      Bill title: ${billTitle}
+                      Bill text:
+                      ${billText}`
+        }
       ],
     });
 
-    const content = message.content[0];
-    if (content.type === "text") {
-      return content.text;
-    }
-
-    return "Unable to generate summary";
+    return message.choices[0].message.content as string;
   } catch (error) {
     console.error("Error generating Anthropic summary:", error);
-    return `[ERROR] Failed to generate summary: ${error instanceof Error ? error.message : "Unknown error"}`;
+    throw error;
   }
 }
-
