@@ -1,0 +1,347 @@
+.billCard {
+  background-color: rgba(42, 42, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1.5rem;
+  min-width: 280px;
+  width: 280px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  backdrop-filter: blur(10px);
+}
+
+.billCard.expanded {
+  width: 320px;
+}
+
+.billCard:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 8px 24px rgba(4, 116, 182, 0.4);
+  filter: brightness(1.1) saturate(1.2);
+}
+
+.billTitle {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+}
+
+.billDescription {
+  font-size: 0.9rem;
+  color: #9f9f9f;
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.billTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  overflow: hidden;
+}
+
+.categoryTag {
+  padding: 0.375rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: white;
+  white-space: nowrap;
+  background-color: rgba(58, 58, 58, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(5px);
+}
+
+.categoryTag.health {
+  background-color: rgba(56, 118, 29, 0.6);
+  border: 1px solid rgba(106, 168, 79, 0.8);
+}
+
+.categoryTag.environment {
+  background-color: rgba(5, 150, 105, 0.6);
+  border: 1px solid rgba(16, 185, 129, 0.8);
+}
+
+.categoryTag.armedServices {
+  background-color: rgba(124, 58, 237, 0.6);
+  border: 1px solid rgba(167, 139, 250, 0.8);
+}
+
+.categoryTag.economy {
+  background-color: rgba(245, 158, 11, 0.6);
+  border: 1px solid rgba(251, 191, 36, 0.8);
+}
+
+.categoryTag.education {
+  background-color: rgba(59, 130, 246, 0.6);
+  border: 1px solid rgba(96, 165, 250, 0.8);
+}
+
+.categoryTag.technology {
+  background-color: rgba(139, 92, 246, 0.6);
+  border: 1px solid rgba(167, 139, 250, 0.8);
+}
+
+.categoryTag.immigration {
+  background-color: rgba(236, 72, 153, 0.6);
+  border: 1px solid rgba(244, 114, 182, 0.8);
+}
+
+.categoryTag.agriculture {
+  background-color: rgba(132, 204, 22, 0.6);
+  border: 1px solid rgba(163, 230, 53, 0.8);
+}
+
+.categoryTag.government {
+  background-color: rgba(99, 102, 241, 0.6);
+  border: 1px solid rgba(129, 140, 248, 0.8);
+}
+
+.categoryTag.taxation {
+  background-color: rgba(249, 115, 22, 0.6);
+  border: 1px solid rgba(251, 146, 60, 0.8);
+}
+
+.categoryTag.civilRights {
+  background-color: rgba(6, 182, 212, 0.6);
+  border: 1px solid rgba(34, 211, 238, 0.8);
+}
+
+.categoryTag.criminalJustice {
+  background-color: rgba(100, 116, 139, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.8);
+}
+
+/* Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+}
+
+.modalContent {
+  background-color: #202020;
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.modalClose {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background-color: #3a3a3a;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  font-size: 1.25rem;
+  transition: background-color 0.2s;
+}
+
+.modalClose:hover {
+  background-color: #4a4a4a;
+}
+
+.modalHeader {
+  margin-bottom: 1.5rem;
+}
+
+.modalTitle {
+  font-size: 1.75rem;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 1rem;
+}
+
+.modalHeaderDivider {
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.2);
+  margin-bottom: 1.5rem;
+}
+
+.modalSubheader {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0474b6;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.modalText {
+  font-size: 0.95rem;
+  color: #9f9f9f;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.modalTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.modalTag {
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  background-color: #3a3a3a;
+  color: white;
+}
+
+.sponsorSection {
+  background-color: #2b2b2b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  margin-top: 0.75rem;
+  backdrop-filter: blur(10px);
+}
+
+.sponsorsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.sponsorName {
+  color: white;
+  font-size: 0.95rem;
+}
+
+.sponsorName.republican {
+  text-decoration: underline;
+  text-decoration-color: #ef4444;
+  text-underline-offset: 3px;
+}
+
+.sponsorName.democrat {
+  text-decoration: underline;
+  text-decoration-color: #3b82f6;
+  text-underline-offset: 3px;
+}
+
+.sponsorName.thirdParty {
+  text-decoration: underline;
+  text-decoration-color: white;
+  text-underline-offset: 3px;
+}
+
+.partyTag {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-left: 0.5rem;
+}
+
+.partyTag.republican {
+  background-color: #ef4444;
+  color: white;
+}
+
+.partyTag.democrat {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.partyTag.thirdParty {
+  background-color: #6b7280;
+  color: white;
+}
+
+.sponsorKey {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: #9f9f9f;
+  margin-top: 0.5rem;
+}
+
+.sponsorKeyItem {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.sponsorKeyLine {
+  width: 40px;
+  height: 2px;
+}
+
+.sponsorKeyLine.republican {
+  background-color: #ef4444;
+}
+
+.sponsorKeyLine.democrat {
+  background-color: #3b82f6;
+}
+
+.sponsorKeyLine.thirdParty {
+  background-color: white;
+}
+
+.officialBillSection {
+  background-color: rgba(4, 116, 182, 0.2);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  margin-top: 0.75rem;
+  backdrop-filter: blur(10px);
+}
+
+.officialLink {
+  color: #0474b6;
+  text-decoration: none;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: color 0.2s;
+}
+
+.officialLink:hover {
+  color: #0365a0;
+}
+
+.modalActions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+/* Button styles moved to PrimaryButton component */
+
+.sponsorHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+

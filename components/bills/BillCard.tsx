@@ -1,94 +1,167 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
 import type { Bill } from "@/types";
-import { formatDate, truncateText } from "@/lib/utils";
+import PrimaryButton from "@/components/ui/PrimaryButton";
+import "./BillCard.css";
 
 interface BillCardProps {
   bill: Bill;
-  isEndorsed?: boolean;
-  onEndorse?: (billId: string) => void;
-  onUnendorse?: (billId: string) => void;
+  isExpanded?: boolean;
+  onCardClick?: (bill: Bill) => void;
 }
 
-export default function BillCard({
-  bill,
-  isEndorsed = false,
-  onEndorse,
-  onUnendorse,
-}: BillCardProps) {
-  const handleEndorse = () => {
-    if (isEndorsed && onUnendorse) {
-      onUnendorse(bill.id);
-    } else if (!isEndorsed && onEndorse) {
-      onEndorse(bill.id);
+const categoryColors: Record<string, string> = {
+  Health: "health",
+  Environment: "environment",
+  "Armed Services": "armedServices",
+  Economy: "economy",
+  Education: "education",
+  Technology: "technology",
+  Immigration: "immigration",
+  "Agriculture and Food": "agriculture",
+  "Government Operations": "government",
+  Taxation: "taxation",
+  "Civil Rights": "civilRights",
+  "Criminal Justice": "criminalJustice",
+};
+
+export default function BillCard({ bill, isExpanded = false, onCardClick }: BillCardProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleClick = () => {
+    if (onCardClick) {
+      onCardClick(bill);
+    } else {
+      setIsModalOpen(true);
     }
   };
 
+  const handleCloseModal = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsModalOpen(false);
+  };
+
+  const getCategoryClass = (category: string | undefined) => {
+    if (!category) return "";
+    return categoryColors[category] || "";
+  };
+
+  const getPartyClass = (party: string) => {
+    if (party === "REPUBLICAN") return "republican";
+    if (party === "DEMOCRAT") return "democrat";
+    return "thirdParty";
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex-1">
-          <Link
-            href={`/feed/${bill.id}`}
-            className="text-xl font-semibold text-gray-900 hover:text-blue-600"
-          >
-            {bill.title}
-          </Link>
-          <div className="mt-2 flex flex-wrap gap-2 text-sm text-gray-500">
-            {bill.date && (
-              <span className="bg-gray-100 px-2 py-1 rounded">
-                {formatDate(bill.date)}
-              </span>
+    <>
+      <div
+        className={`billCard ${isExpanded ? "expanded" : ""}`}
+        onClick={handleClick}
+      >
+        <h3 className="billTitle">{bill.title}</h3>
+        {bill.description && (
+          <p className="billDescription">{bill.description}</p>
+        )}
+        {bill.category && (
+          <div className="billTags">
+            <span className={`categoryTag ${getCategoryClass(bill.category)}`}>
+              {bill.category}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {isModalOpen && (
+        <div className="modalOverlay" onClick={handleCloseModal}>
+          <div className="modalContent" onClick={(e) => e.stopPropagation()}>
+            <button className="modalClose" onClick={handleCloseModal}>
+              ×
+            </button>
+            <div className="modalHeader">
+              <h2 className="modalTitle">{bill.title}</h2>
+              <div className="modalHeaderDivider"></div>
+            </div>
+
+            <div>
+              <h3 className="modalSubheader">Description</h3>
+              <p className="modalText">
+                {bill.summary || bill.description || "No description available."}
+              </p>
+            </div>
+
+            {bill.category && (
+              <div>
+                <h3 className="modalSubheader">Topic Tags</h3>
+                <div className="modalTags">
+                  <span className={`categoryTag ${getCategoryClass(bill.category)}`}>
+                    {bill.category}
+                  </span>
+                </div>
+              </div>
             )}
-            {bill.status && (
-              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                {bill.status}
-              </span>
+
+            {bill.sponsorDetails && bill.sponsorDetails.length > 0 && (
+              <div>
+                <div className="sponsorHeader">
+                  <h3 className="modalSubheader">Sponsors</h3>
+                  <div className="sponsorKey">
+                    <div className="sponsorKeyItem">
+                      <div className="sponsorKeyLine republican"></div>
+                      <span>Republican</span>
+                    </div>
+                    <div className="sponsorKeyItem">
+                      <div className="sponsorKeyLine democrat"></div>
+                      <span>Democrat</span>
+                    </div>
+                    <div className="sponsorKeyItem">
+                      <div className="sponsorKeyLine thirdParty"></div>
+                      <span>Third Party</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="sponsorSection">
+                  <div className="sponsorsList">
+                    {bill.sponsorDetails.map((sponsor, index) => (
+                      <span key={index}>
+                        <span className={`sponsorName ${getPartyClass(sponsor.party)}`}>
+                          {sponsor.name}
+                        </span>
+                        {index < bill.sponsorDetails!.length - 1 && ", "}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
             )}
-            {bill.origin && (
-              <span className="bg-green-100 text-green-800 px-2 py-1 rounded">
-                {bill.origin}
-              </span>
+
+            {bill.url && (
+              <div>
+                <h3 className="modalSubheader">Official Bill</h3>
+                <div className="officialBillSection">
+                  <a
+                    href={bill.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="officialLink"
+                  >
+                    View on Congress.gov →
+                  </a>
+                </div>
+              </div>
             )}
+
+            <div className="modalActions">
+              <PrimaryButton variant="primary" className="flex-1">
+                Endorse Bill
+              </PrimaryButton>
+              <PrimaryButton variant="secondary" className="flex-1">
+                Contact Representative
+              </PrimaryButton>
+            </div>
           </div>
         </div>
-      </div>
-
-      {bill.sponsors && bill.sponsors.length > 0 && (
-        <div className="mb-4">
-          <p className="text-sm text-gray-600">
-            <span className="font-medium">Sponsors:</span>{" "}
-            {bill.sponsors.join(", ")}
-          </p>
-        </div>
       )}
-
-      <div className="flex justify-between items-center mt-4">
-        {bill.url && (
-          <a
-            href={bill.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-          >
-            View on Congress.gov →
-          </a>
-        )}
-        {(onEndorse || onUnendorse) && (
-          <button
-            onClick={handleEndorse}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              isEndorsed
-                ? "bg-green-100 text-green-800 hover:bg-green-200"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            {isEndorsed ? "✓ Endorsed" : "Endorse"}
-          </button>
-        )}
-      </div>
-    </div>
+    </>
   );
 }
-
