@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import Link from "next/link";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import "./login.css";
-import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -34,35 +33,26 @@ export default function LoginPage() {
     }
 
     try {
-      const response = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
       });
-      
-      // Check if response is ok before trying to parse JSON
-      if (response.ok) {
-          // Try to parse JSON, but handle redirect responses
-          const contentType = response.headers.get("content-type");
-          if (contentType && contentType.includes("application/json")) {
-              const data = await response.json();
-              // Successful login - redirect to feed
-              router.push('/feed');
-          } else {
-              // If it's a redirect, just go to feed
-              router.push('/feed');
-          }
-      } else {
-          // Handle error response
-          const data = await response.json();
-          setError(data.error || "Login failed. Please try again.");
-          setIsLoading(false);
+
+      if (result?.error) {
+        setError("Invalid email or password");
+        setIsLoading(false);
+        return;
       }
-  } catch (err: any) {
+
+      if (result?.ok) {
+        router.push('/feed');
+      }
+    } catch (err: any) {
       console.error("Error logging in:", err);
       setError("An error occurred. Please try again.");
       setIsLoading(false);
-  }
+    }
 };
 
   return (
