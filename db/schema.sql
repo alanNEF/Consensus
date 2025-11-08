@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS bills (
   origin TEXT NOT NULL,
   url TEXT NOT NULL,
   sponsors TEXT[] NOT NULL,
+  bill_text TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
