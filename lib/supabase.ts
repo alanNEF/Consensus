@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Bill, BillSummary, Endorsement, SavedBill, User } from "@/types";
 import type { Database } from "./database.types";
+import { CongressBill } from "./congress/clients";
 
 // Server-side Supabase client (uses service role key)
 // TODO: Replace with your Supabase URL and service role key
@@ -11,6 +12,10 @@ if (!supabaseUrl || !supabaseServiceKey) {
   console.warn(
     "⚠️  Supabase credentials not configured. Database operations will be mocked."
   );
+}
+
+export function assembleLink(bill:CongressBill): string {
+  return `https://www.congress.gov/bill/${bill.congress}th-congress/${bill.originChamber}-bill/${bill.number}`;
 }
 
 // Create server client with service role key (bypasses RLS)
