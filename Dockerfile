@@ -36,6 +36,13 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # Build the application
 FROM base AS builder
+# Install build tools for native modules
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -43,6 +50,9 @@ COPY . .
 # Set Python path for build
 ENV PYTHON_PATH=/app/python/venv/bin/python3
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# Rebuild native modules for the target platform (Linux)
+RUN npm rebuild bcrypt sharp --build-from-source
 
 RUN npm run build
 
@@ -66,6 +76,14 @@ RUN useradd --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Copy node_modules for native dependencies (bcrypt, sharp) that aren't included in standalone
+# Next.js standalone mode may not include these native modules, so we copy them explicitly
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/next ./node_modules/next
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/bcrypt ./node_modules/bcrypt
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/sharp ./node_modules/sharp
+# Copy node-gyp-build which is needed for native modules
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/node-gyp-build ./node_modules/node-gyp-build
 
 # Copy Python virtual environment and source files
 COPY --from=python-deps --chown=nextjs:nodejs /app/python/venv ./python/venv

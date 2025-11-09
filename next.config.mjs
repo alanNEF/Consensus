@@ -2,6 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
   output: 'standalone', // Required for Docker deployment
+  // Ensure native modules are included in standalone build
+  serverExternalPackages: [],
   experimental: {
     serverActions: {
       bodySizeLimit: '2mb',
