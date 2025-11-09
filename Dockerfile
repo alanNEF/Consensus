@@ -37,11 +37,12 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # Build the application
 FROM base AS builder
-# Install build tools for native modules
+# Install build tools for native modules (needed for bcrypt, sharp)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     make \
     g++ \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -54,10 +55,20 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 # Rebuild native modules for the target platform (Linux)
 # This ensures they're built for Linux and will be included in the standalone output
-# Use || true to not fail if rebuild has issues (they might already be built correctly)
-RUN npm rebuild bcrypt sharp --build-from-source || echo "Rebuild completed with warnings"
+RUN npm rebuild bcrypt sharp --build-from-source
 
 RUN npm run build
+
+# After build, rebuild native modules in the standalone directory
+# Next.js standalone mode copies node_modules to .next/standalone/node_modules
+# We need to ensure native modules are rebuilt there for the production runtime
+# Copy package.json to standalone so npm rebuild can work
+RUN if [ -d ".next/standalone/node_modules" ] && [ -f "package.json" ]; then \
+      cp package.json .next/standalone/ && \
+      cd .next/standalone && \
+      npm rebuild bcrypt sharp --build-from-source && \
+      rm package.json package-lock.json 2>/dev/null || true; \
+    fi
 
 # Production image
 FROM base AS runner
@@ -79,6 +90,13 @@ RUN useradd --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Copy native modules from builder to ensure they're available
+# The app is looking for them in /app/node_modules, so we copy them there
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/bcrypt ./node_modules/bcrypt
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/sharp ./node_modules/sharp
+# Also copy node-gyp-build which is needed for native modules
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/node-gyp-build ./node_modules/node-gyp-build
 
 # Copy Python virtual environment and source files
 COPY --from=python-deps --chown=nextjs:nodejs /app/python/venv ./python/venv
