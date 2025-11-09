@@ -31,6 +31,10 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 # Milvus configuration
 MILVUS_HOST = os.getenv("MILVUS_HOST", "localhost")
 MILVUS_PORT = os.getenv("MILVUS_PORT", "19530")
+MILVUS_URI = os.getenv("MILVUS_URI")  # For serverless/cloud connections (e.g., Zilliz Cloud)
+MILVUS_USER = os.getenv("MILVUS_USER")  # Username for authentication
+MILVUS_PASSWORD = os.getenv("MILVUS_PASSWORD")  # Password for authentication
+MILVUS_TOKEN = os.getenv("MILVUS_TOKEN")  # API token for authentication (alternative to user/password)
 MILVUS_COLLECTION_NAME = os.getenv("MILVUS_COLLECTION_NAME", "bill_embeddings")
 
 # Check if required env vars are set
@@ -187,19 +191,40 @@ def get_milvus_connection():
             # Connection doesn't exist or is broken, create new one
             pass
         
-        # Connect to Milvus
-        connections.connect(
-            alias="default",
-            host=MILVUS_HOST,
-            port=int(MILVUS_PORT)
-        )
+        # Connect to Milvus - support both traditional (host/port) and serverless (URI) connections
+        if MILVUS_URI:
+            # Serverless/Cloud connection (e.g., Zilliz Cloud)
+            connection_params = {
+                "alias": "default",
+                "uri": MILVUS_URI,
+            }
+            # Add authentication if provided
+            if MILVUS_TOKEN:
+                connection_params["token"] = MILVUS_TOKEN
+            elif MILVUS_USER and MILVUS_PASSWORD:
+                connection_params["user"] = MILVUS_USER
+                connection_params["password"] = MILVUS_PASSWORD
+            
+            print(f"  [INFO] Connecting to Milvus serverless at: {MILVUS_URI}")
+            connections.connect(**connection_params)
+        else:
+            # Traditional host/port connection
+            print(f"  [INFO] Connecting to Milvus at: {MILVUS_HOST}:{MILVUS_PORT}")
+            connections.connect(
+                alias="default",
+                host=MILVUS_HOST,
+                port=int(MILVUS_PORT)
+            )
         
         # Verify connection works
         utility.list_collections()
         return True
     except Exception as e:
         print(f"  [ERROR] Failed to connect to Milvus: {e}")
-        print(f"  [DEBUG] Host: {MILVUS_HOST}, Port: {MILVUS_PORT}")
+        if MILVUS_URI:
+            print(f"  [DEBUG] URI: {MILVUS_URI}")
+        else:
+            print(f"  [DEBUG] Host: {MILVUS_HOST}, Port: {MILVUS_PORT}")
         return False
 
 
