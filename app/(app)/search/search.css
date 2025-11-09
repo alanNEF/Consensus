@@ -1,0 +1,59 @@
+.searchContainer {
+  min-height: 100vh;
+  background-color: #1a1a1a;
+  padding: 2rem;
+}
+
+.searchContent {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.searchHeader {
+  margin-bottom: 2rem;
+}
+
+.searchTitle {
+  font-size: 2rem;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+.searchSubtitle {
+  font-size: 1rem;
+  color: #9f9f9f;
+}
+
+.searchResults {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.loadingState,
+.errorState,
+.noResults {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #9f9f9f;
+}
+
+.loadingState p,
+.errorState p,
+.noResults p {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.errorState {
+  color: #ef4444;
+}
+
+.noResults p:first-child {
+  font-size: 1.25rem;
+  color: white;
+  margin-bottom: 1rem;
+}
+

@@ -1,12 +1,16 @@
 "use client";
 
-import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Button from "@/components/ui/button";
+import { signIn } from "next-auth/react";
+import Link from "next/link";
+import PrimaryButton from "@/components/ui/PrimaryButton";
+import "./login.css";
+import Logo from "@/components/nav/Logo";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -16,52 +20,54 @@ export default function LoginPage() {
     setIsLoading(true);
     setError("");
 
+    // Simple validation: email must contain @, password can be any string
+    if (!email.includes("@")) {
+      setError("Please enter a valid email address");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!password) {
+      setError("Please enter a password");
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const result = await signIn("email", {
+      const result = await signIn('credentials', {
         email,
+        password,
         redirect: false,
       });
 
       if (result?.error) {
-        setError("Failed to send magic link. Please try again.");
-      } else {
-        // Show success message
-        setError("");
-        alert(
-          "Check your email for a magic link to sign in. (Note: This is a stub - configure SMTP for actual email delivery)"
-        );
+        setError("Invalid email or password");
+        setIsLoading(false);
+        return;
       }
-    } catch (err) {
+
+      if (result?.ok) {
+        router.push('/feed');
+      }
+    } catch (err: any) {
+      console.error("Error logging in:", err);
       setError("An error occurred. Please try again.");
-    } finally {
       setIsLoading(false);
     }
-  };
+};
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{" "}
-            <a
-              href="/create-account"
-              className="font-medium text-blue-600 hover:text-blue-500"
-            >
-              create a new account
-            </a>
-          </p>
+    <div className="loginContainer">
+      <div className="loginCard">
+        <div className="logoContainer">
+          <Logo />
+          <h3 className="loginTitle">Consensi</h3>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Email address
+        <p className="loginSlogan">Understand Congress. Make Your Voice Heard.</p>
+        <form className="loginForm" onSubmit={handleSubmit}>
+          <div className="formGroup">
+            <label htmlFor="email" className="formLabel">
+              Email
             </label>
             <input
               id="email"
@@ -71,26 +77,41 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              placeholder="you@example.com"
+              className="formInput"
+              placeholder="Enter your email"
+            />
+          </div>
+          <div className="formGroup">
+            <label htmlFor="password" className="formLabel">
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="formInput"
+              placeholder="Enter your password"
             />
           </div>
 
-          {error && (
-            <div className="text-red-600 text-sm text-center">{error}</div>
-          )}
+          {error && <div className="errorMessage">{error}</div>}
 
-          <div>
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-              size="lg"
-            >
-              {isLoading ? "Sending..." : "Send magic link"}
-            </Button>
-          </div>
+          <PrimaryButton
+            type="submit"
+            variant="primary"
+            disabled={isLoading}
+            className="w-full"
+          >
+            {isLoading ? "Signing In..." : "Sign In"}
+          </PrimaryButton>
         </form>
+        <div className="signUpLink">
+          Don&apos;t have an account? <Link href="/create-account">Sign up</Link>
+        </div>
       </div>
     </div>
   );

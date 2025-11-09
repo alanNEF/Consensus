@@ -1,0 +1,153 @@
+.topNav {
+  background-color: #1a1a1a;
+  border-bottom: 1px solid #2a2a2a;
+  padding: 0;
+}
+
+.topNavContainer {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 64px;
+  gap: 1rem;
+}
+
+.topNavTitle {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  height: 100%;
+  flex-shrink: 0;
+  gap: 0.75rem;
+}
+
+.topNavTitle svg {
+  height: 40px;
+  width: auto;
+}
+
+.topNavTitleText {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+}
+
+.topNavRight {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.topNavSearchContainer {
+  display: flex;
+  align-items: center;
+  margin-right: 2rem;
+}
+
+.topNavSearch {
+  position: relative;
+  width: 272px;
+  display: flex;
+  align-items: center;
+}
+
+.topNavSearch form {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.topNavSearchIcon {
+  position: absolute;
+  left: 12px;
+  color: #6e7681;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.topNavSearchInput {
+  width: 100%;
+  padding: 8px 12px 8px 36px;
+  background-color: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #c9d1d9;
+  font-size: 14px;
+  transition: border-color 0.2s, background-color 0.2s;
+  outline: none;
+}
+
+.topNavSearchInput::placeholder {
+  color: #6e7681;
+}
+
+.topNavSearchInput:focus {
+  border-color: #1f6feb;
+  background-color: #0d1117;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.topNavSearchShortcut {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.topNavSearchShortcut kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #6e7681;
+  background-color: rgba(110, 118, 129, 0.1);
+  border: 1px solid rgba(110, 118, 129, 0.2);
+  border-radius: 3px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  min-width: 20px;
+  height: 20px;
+}
+
+.topNavLinks {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex-shrink: 0;
+}
+
+.topNavLink {
+  color: #9f9f9f;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: color 0.2s;
+  position: relative;
+  padding-bottom: 0.25rem;
+}
+
+.topNavLink:hover {
+  color: white;
+}
+
+.topNavLink.active {
+  color: #0474b6;
+}
+
+.topNavLink.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #0474b6;
+}
+

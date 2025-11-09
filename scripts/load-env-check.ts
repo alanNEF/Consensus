@@ -3,6 +3,12 @@
  * Environment variable sanity check script
  * Run this before starting the dev server to verify configuration
  */
+import { config } from "dotenv";
+import path from "path";
+config({ path: path.join(process.cwd(), ".env") });
+
+// Load .env file
+import "dotenv/config";
 
 const requiredEnvVars = {
   // Next.js
@@ -85,19 +91,19 @@ function checkEnvVars() {
   // Feature availability
   console.log("📊 Feature availability:");
   console.log(
-    `   Database: ${process.env.SUPABASE_URL && process.env.SUPABASE_URL !== "replace_me" ? "✅" : "❌ (using mocks)"}`
+    `   Database: ${process.env.SUPABASE_URL && process.env.SUPABASE_URL !== "replace_me" ? "✅" : "❌ (not configured)"}`
   );
   console.log(
-    `   AI Summaries (OpenAI): ${process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== "replace_me" ? "✅" : "❌ (using placeholders)"}`
+    `   AI Summaries (OpenAI): ${process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== "replace_me" ? "✅" : "❌ (not configured)"}`
   );
   console.log(
-    `   AI Summaries (Anthropic): ${process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY !== "replace_me" ? "✅" : "❌ (using placeholders)"}`
+    `   AI Summaries (Anthropic): ${process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY !== "replace_me" ? "✅" : "❌ (not configured)"}`
   );
   console.log(
-    `   Congress.gov API: ${process.env.CONGRESS_GOV_API_KEY && process.env.CONGRESS_GOV_API_KEY !== "replace_me" ? "✅" : "❌ (using mocks)"}`
+    `   Congress.gov API: ${process.env.CONGRESS_GOV_API_KEY && process.env.CONGRESS_GOV_API_KEY !== "replace_me" ? "✅" : "❌ (not configured)"}`
   );
   console.log(
-    `   Email Auth: ${process.env.SMTP_HOST && process.env.SMTP_HOST !== "replace_me" ? "✅" : "❌ (stub only)"}`
+    `   Email Auth: ${process.env.SMTP_HOST && process.env.SMTP_HOST !== "replace_me" ? "✅" : "❌ (not configured)"}`
   );
   console.log();
 
@@ -106,7 +112,7 @@ function checkEnvVars() {
       "💡 Tip: Copy .env.example to .env and fill in your values."
     );
     console.log(
-      "   Some features will work with mocks/placeholders, but for full functionality, configure all variables.\n"
+      "   Configure all required variables for full functionality.\n"
     );
   } else {
     console.log("🎉 All required environment variables are configured!\n");

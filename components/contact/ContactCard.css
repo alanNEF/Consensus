@@ -1,0 +1,155 @@
+.contactCard {
+  background-color: #202020;
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 500px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.contactCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.contactPhotoContainer {
+  flex-shrink: 0;
+}
+
+.contactPhoto {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.contactPhotoPlaceholder {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #3a3a3a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9f9f9f;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.contactHeaderInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.contactName {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: white;
+  margin: 0;
+}
+
+.contactParty {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: white;
+  width: fit-content;
+}
+
+.contactParty.republican {
+  background-color: rgba(239, 68, 68, 0.6);
+  border: 1px solid rgba(239, 68, 68, 0.9);
+}
+
+.contactParty.democrat {
+  background-color: rgba(59, 130, 246, 0.6);
+  border: 1px solid rgba(59, 130, 246, 0.9);
+}
+
+.contactParty.thirdParty {
+  background-color: rgba(107, 114, 128, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+.contactCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.contactInfoItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background-color: #2b2b2b;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.contactInfoIcon {
+  width: 20px;
+  height: 20px;
+  color: #0474b6;
+  flex-shrink: 0;
+}
+
+.contactInfoText {
+  color: #9f9f9f;
+  font-size: 0.95rem;
+  flex: 1;
+}
+
+.contactInfoLink {
+  color: #0474b6;
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.contactInfoLink:hover {
+  color: #0365a0;
+  text-decoration: underline;
+}
+
+.contactFormSection {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.contactFormLink {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: #2b2b2b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #0474b6;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.contactFormLink:hover {
+  background-color: #3a3a3a;
+  border-color: #0474b6;
+  color: #0365a0;
+}
+
+.contactFormLinkIcon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+

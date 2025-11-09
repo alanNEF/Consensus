@@ -1,28 +1,132 @@
-import { getBills } from "@/lib/supabase";
-import BillList from "@/components/bills/BillList";
-import { getMockBills } from "@/lib/mocks";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth";
+import { getUserById, getBillsByCategory, getBillSummary, assembleLink } from "@/lib/supabase";
+import FeedClient from "./FeedClient";
+import { Bill, BillSummary } from "@/types";
+import { config } from "dotenv";
+import path from "path";
+config({ path: path.join(process.cwd(), ".env") });
 
 export default async function FeedPage() {
-  // Try to fetch from database, fallback to mock data
-  let bills;
-  try {
-    const result = await getBills(1, 20);
-    bills = result.data.length > 0 ? result.data : getMockBills();
-  } catch (error) {
-    console.error("Error fetching bills:", error);
-    bills = getMockBills();
+  const session = await getSession();
+  if (!session?.user?.id) {
+    redirect("/login");
   }
 
+  const user = await getUserById(session.user.id);
+  if (!user) {
+    redirect("/login");
+  }
+
+  const preferredCategories = user.topics || [];
+  const allCategoriesList = [
+    "Healthcare",
+    "Environmentalism",
+    "Armed Services",
+    "Economy",
+    "Education",
+    "Technology",
+    "Immigration",
+    "Agriculture + Food",
+    "Government Operations",
+    "Taxation",
+    "Civil Rights",
+    "Criminal Justice",
+    "Foreign Policy",
+  ];
+
+  // Filter out preferred categories from remaining
+  const remainingCategories = allCategoriesList.filter(
+    (category) => !preferredCategories.includes(category)
+  );
+
+
+  if (!process.env.GEOCODIO_API_KEY) {
+    console.error("GEOCOD_API_KEY is not set in environment variables");
+  } else {
+    console.log("API Key exists:", process.env.GEOCODIO_API_KEY ? "Yes" : "No");
+  }
+  // Fetch bills for preferred categories
+  const billsByCategoryPreferred = new Map<string, Bill[]>();
+  for (const category of preferredCategories) {
+    const bills = await getBillsByCategory(category);
+    billsByCategoryPreferred.set(category, bills);
+  }
+
+  // Fetch bills for remaining categories
+  const billsByCategoryRemaining = new Map<string, Bill[]>();
+  for (const category of remainingCategories) {
+    const bills = await getBillsByCategory(category);
+    billsByCategoryRemaining.set(category, bills);
+  }
+
+  const billSummaries = new Map<string, BillSummary>();
+  const billUrls = new Map<string, string>();
+  for (const [, bills] of billsByCategoryPreferred.entries()) {
+    for (const bill of bills) {
+      const sum = await getBillSummary(bill.id || "");
+      const url = await assembleLink(bill);
+      if (sum) {
+        billSummaries.set(bill.id, sum as BillSummary);
+      }
+      if (url) {
+        billUrls.set(bill.id, url);
+      }
+    }
+  }
+
+  for (const [, bills] of billsByCategoryRemaining.entries()) {
+    for (const bill of bills) {
+      const sum = await getBillSummary(bill.id || "");
+      const url = await assembleLink(bill);
+      if (sum) {
+        billSummaries.set(bill.id, sum as BillSummary);
+      }
+      if (url) {
+        billUrls.set(bill.id, url);
+      }
+    }
+  }
+
+  // Fetch legislators using the user's residency directly
+  let representatives = [];
+  console.log(user.residency);
+  if (user.residency) {
+    try {
+      const geocodResponse = await fetch(
+        `https://api.geocod.io/v1.9/geocode?q=${encodeURIComponent(user.residency)}&country=USA&fields=cd&api_key=${process.env.GEOCODIO_API_KEY}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (geocodResponse.ok) {
+        const geocodData = await geocodResponse.json();
+        console.log(geocodData);
+        representatives = geocodData.results?.[0]?.fields?.congressional_districts?.[0]?.current_legislators || [];
+      } else {
+        console.error("Error fetching legislators:", geocodResponse.statusText);
+      }
+    } catch (error) {
+      console.error("Error fetching legislators:", error);
+      // Continue without representatives if the API call fails
+    }
+  }
+
+  console.log(representatives);
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Bill Feed</h1>
-        <p className="mt-2 text-gray-600">
-          Browse current U.S. congressional bills
-        </p>
-      </div>
-      <BillList bills={bills} />
-    </div>
+    <FeedClient
+      preferredCategories={preferredCategories}
+      remainingCategories={remainingCategories}
+      billsByCategoryPreferred={billsByCategoryPreferred}
+      billsByCategoryRemaining={billsByCategoryRemaining}
+      billSummaries={billSummaries}
+      representatives={representatives}
+      billUrls={billUrls}
+    />
   );
 }
-

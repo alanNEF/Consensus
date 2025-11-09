@@ -3,6 +3,31 @@ import { getBillById, getBillSummary } from "@/lib/supabase";
 import { generateBillSummary } from "@/lib/ai/openai";
 import { generateBillSummaryAnthropic } from "@/lib/ai/anthropic";
 
+export async function GET(
+  request: Request,
+  { params }: { params: { billId: string } }
+) {
+  try {
+    const billId = params.billId;
+    const summary = await getBillSummary(billId);
+    
+    if (!summary) {
+      return NextResponse.json(
+        { error: "Summary not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(summary);
+  } catch (error) {
+    console.error("Error fetching summary:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch summary" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(
   request: Request,
   { params }: { params: { billId: string } }

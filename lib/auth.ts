@@ -1,59 +1,48 @@
 import { NextAuthOptions } from "next-auth";
-import EmailProvider from "next-auth/providers/email";
 import CredentialsProvider from "next-auth/providers/credentials";
-import type { Adapter } from "next-auth/adapters";
-
-// TODO: If using Supabase adapter, install @next-auth/supabase-adapter
-// import { SupabaseAdapter } from "@next-auth/supabase-adapter";
-// import { supabase } from "./supabase";
-
-// TODO: If using Prisma, install @prisma/client and @next-auth/prisma-adapter
-// import { PrismaAdapter } from "@next-auth/prisma-adapter";
-
-// For now, we'll use JWT sessions without an adapter
-// In production, use SupabaseAdapter or PrismaAdapter with a database
+import { supabase } from "./supabase";
+import { verifyPassword } from "./password";
 
 export const authOptions: NextAuthOptions = {
-  // TODO: Uncomment and configure Supabase adapter when ready:
-  // adapter: SupabaseAdapter({
-  //   url: process.env.SUPABASE_URL!,
-  //   secret: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  // }) as Adapter,
-
   providers: [
-    // Email provider (magic link)
-    EmailProvider({
-      server: {
-        host: process.env.SMTP_HOST,
-        port: Number(process.env.SMTP_PORT) || 587,
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASSWORD,
-        },
+    // Credentials provider for email/password authentication
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
       },
-      from: process.env.SMTP_FROM || "noreply@example.com",
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password || !supabase) {
+          return null;
+        }
+
+        // Find user in database
+        // Type assertion needed because hashed_password is not in the User type
+        const { data: user, error } = await supabase
+          .from("users")
+          .select("id, email, name, hashed_password")
+          .eq("email", credentials.email)
+          .single() as { data: { id: string; email: string; name: string | null; hashed_password: string } | null; error: any };
+
+        if (error || !user || !user.hashed_password) {
+          return null;
+        }
+
+        // Verify password
+        const isValid = await verifyPassword(credentials.password, user.hashed_password);
+
+        if (!isValid) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+        };
+      },
     }),
-    // TODO: Alternative Credentials provider (uncomment to use instead of Email):
-    // CredentialsProvider({
-    //   name: "Credentials",
-    //   credentials: {
-    //     email: { label: "Email", type: "email" },
-    //     password: { label: "Password", type: "password" },
-    //   },
-    //   async authorize(credentials) {
-    //     // TODO: Implement your authentication logic here
-    //     // Verify credentials against your database
-    //     if (!credentials?.email || !credentials?.password) {
-    //       return null;
-    //     }
-    //     // Mock authentication for now
-    //     return {
-    //       id: "1",
-    //       email: credentials.email,
-    //       name: "Test User",
-    //     };
-    //   },
-    // }),
   ],
   pages: {
     signIn: "/login",
