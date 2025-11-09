@@ -61,6 +61,7 @@ export interface SavedBill {
     id: string;
     user_id: string;
     bill_id: string;
+    endorsed: boolean; // Add this field
     created_at: string;
 }
 
