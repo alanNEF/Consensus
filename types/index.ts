@@ -38,6 +38,7 @@ export interface Bill {
     bill_text: string;
     affectedGroups?: string[];
     sponsorDetails?: Sponsor[];
+    
 }
 
 export interface BillSummary {
@@ -69,5 +70,14 @@ export interface PaginatedResponse<T> {
     pageSize: number;
     total: number;
     hasMore: boolean;
+}
+
+export interface Representative {
+    name: string;
+    photo?: string | null;
+    party: "REPUBLICAN" | "DEMOCRAT" | "THIRD_PARTY";
+    address?: string | null;
+    phone?: string | null;
+    website?: string | null;
 }
 
