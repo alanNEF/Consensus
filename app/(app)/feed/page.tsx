@@ -3,6 +3,10 @@ import { getSession } from "@/lib/auth";
 import { getUserById, getBillsByCategory, getBillSummary } from "@/lib/supabase";
 import FeedClient from "./FeedClient";
 import { Bill, BillSummary } from "@/types";
+import { getUserResidency } from "@/lib/supabase";
+import { config } from "dotenv";
+import path from "path";
+config({ path: path.join(process.cwd(), ".env") });
 
 export default async function FeedPage() {
   const session = await getSession();
@@ -37,6 +41,12 @@ export default async function FeedPage() {
     (category) => !preferredCategories.includes(category)
   );
 
+
+  if (!process.env.GEOCODIO_API_KEY) {
+    console.error("GEOCOD_API_KEY is not set in environment variables");
+  } else {
+    console.log("API Key exists:", process.env.GEOCODIO_API_KEY ? "Yes" : "No");
+  }
   // Fetch bills for preferred categories
   const billsByCategoryPreferred = new Map<string, Bill[]>();
   for (const category of preferredCategories) {
@@ -70,6 +80,36 @@ export default async function FeedPage() {
     }
   }
 
+  // Fetch legislators using the user's residency directly
+  let representatives = [];
+  console.log(user.residency);
+  if (user.residency) {
+    try {
+      const geocodResponse = await fetch(
+        `https://api.geocod.io/v1.9/geocode?q=${encodeURIComponent(user.residency)}&country=USA&fields=cd&api_key=${process.env.GEOCODIO_API_KEY}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (geocodResponse.ok) {
+        const geocodData = await geocodResponse.json();
+        console.log(geocodData);
+        representatives = geocodData.results?.[0]?.fields?.congressional_districts?.[0]?.current_legislators || [];
+      } else {
+        console.error("Error fetching legislators:", geocodResponse.statusText);
+      }
+    } catch (error) {
+      console.error("Error fetching legislators:", error);
+      // Continue without representatives if the API call fails
+    }
+  }
+
+  console.log(representatives);
+
   return (
     <FeedClient
       preferredCategories={preferredCategories}
@@ -77,6 +117,7 @@ export default async function FeedPage() {
       billsByCategoryPreferred={billsByCategoryPreferred}
       billsByCategoryRemaining={billsByCategoryRemaining}
       billSummaries={billSummaries}
+      representatives={representatives}
     />
   );
 }

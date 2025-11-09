@@ -13,7 +13,7 @@ export async function GET() {
         return NextResponse.json({ error: "User residency not found" }, { status: 404 });
     }
     try {
-        const response = await fetch(`"https://api.geocod.io/v1.9/geocode?q=${userResidency}&country=USA&fields=cd&api_key=${process.env.GEOCOD_API_KEY}`, {
+        const response = await fetch(`https://api.geocod.io/v1.9/geocode?q=${encodeURIComponent(userResidency)}&country=USA&fields=cd&api_key=${process.env.GEOCOD_API_KEY}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",

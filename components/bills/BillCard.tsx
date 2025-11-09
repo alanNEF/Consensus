@@ -105,12 +105,6 @@ export default function BillCard({ bill, billSummary, isExpanded = false, onCard
     setIsContactGalleryOpen(false);
   };
 
-  // Get representatives from props (based on user's congressional district)
-  // If not provided, return empty array
-  const getRepresentatives = (): Representative[] => {
-    return representatives || [];
-  };
-
   const getCategoryClass = (category: string | undefined) => {
     if (!category) return "";
     // Try exact match first
@@ -381,7 +375,7 @@ export default function BillCard({ bill, billSummary, isExpanded = false, onCard
 
           {isContactGalleryOpen && (
             <ContactCardGallery
-              representatives={getRepresentatives()}
+              representatives={representatives || []}
               isVisible={isContactGalleryOpen}
               onClose={handleCloseContactGallery}
             />
