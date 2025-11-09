@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import type { Bill, BillSummary, SavedBill } from "@/types";
 import PrimaryButton from "@/components/ui/PrimaryButton";
+import DemographicsCharts from "@/app/(app)/bill-demographics/DemographicsCharts";
+import "@/app/(app)/bill-demographics/bill-demographics.css";
 import "./BillCard.css";
 
 interface BillCardProps {
@@ -37,10 +39,40 @@ export default function BillCard({ bill, billSummary, billUrl, isExpanded = fals
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEndorsed, setIsEndorsed] = useState(false);
   const [isOpposed, setIsOpposed] = useState(false);
+  const [demographicsCounts, setDemographicsCounts] = useState<Record<string, Record<string, number>> | null>(null);
+  const [demographicsLoading, setDemographicsLoading] = useState(false);
 
   useEffect(() => {
     checkEndorsementStatus();
+    fetchDemographics();
   }, [bill.id]);
+
+  useEffect(() => {
+    if (demographicsCounts) {
+      console.log("DemographicsCounts updated:", demographicsCounts);
+      console.log("Will render charts:", Object.keys(demographicsCounts).some(key => Object.keys(demographicsCounts[key]).length > 0));
+    }
+  }, [demographicsCounts]);
+
+  const fetchDemographics = async () => {
+    setDemographicsLoading(true);
+    try {
+      const response = await fetch(`/api/bills/${bill.id}/demographics`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Demographics data:", data);
+        console.log("Demographics counts:", data.counts);
+        console.log("Has data:", data.counts && Object.keys(data.counts).some(key => Object.keys(data.counts[key]).length > 0));
+        setDemographicsCounts(data.counts);
+      } else {
+        console.error("Failed to fetch demographics:", response.status);
+      }
+    } catch (error) {
+      console.error("Error fetching demographics:", error);
+    } finally {
+      setDemographicsLoading(false);
+    }
+  };
 
   const checkEndorsementStatus = async () => {
     try {
@@ -108,6 +140,7 @@ export default function BillCard({ bill, billSummary, billUrl, isExpanded = fals
         });
         if (response.ok) {
           await checkEndorsementStatus();
+          await fetchDemographics();
         }
       } catch (error) {
         console.error("Error removing endorsement:", error);
@@ -121,6 +154,7 @@ export default function BillCard({ bill, billSummary, billUrl, isExpanded = fals
         });
         if (response.ok) {
           await checkEndorsementStatus();
+          await fetchDemographics();
         }
       } catch (error) {
         console.error("Error endorsing bill:", error);
@@ -139,6 +173,7 @@ export default function BillCard({ bill, billSummary, billUrl, isExpanded = fals
         });
         if (response.ok) {
           await checkEndorsementStatus();
+          await fetchDemographics();
         }
       } catch (error) {
         console.error("Error removing opposition:", error);
@@ -153,6 +188,7 @@ export default function BillCard({ bill, billSummary, billUrl, isExpanded = fals
         if (response.ok) {
           // Refresh status to ensure we have the latest state
           await checkEndorsementStatus();
+          await fetchDemographics();
         }
       } catch (error) {
         console.error("Error opposing bill:", error);
@@ -285,6 +321,29 @@ export default function BillCard({ bill, billSummary, billUrl, isExpanded = fals
                 </div>
               </div>
             )}
+
+            <div>
+              <h3 className="modalSubheader">
+                <svg className="modalSubheaderIcon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Demographics
+              </h3>
+              {demographicsLoading ? (
+                <p style={{ color: "#9f9f9f", marginTop: "1rem" }}>Loading demographics...</p>
+              ) : demographicsCounts ? (
+                <div style={{ marginTop: "1rem", width: "100%" }}>
+                  <DemographicsCharts 
+                    counts={demographicsCounts} 
+                    chartHeight={200}
+                    outerRadius={70}
+                    innerRadius={35}
+                  />
+                </div>
+              ) : (
+                <p style={{ color: "#9f9f9f", marginTop: "1rem" }}>No demographic data available.</p>
+              )}
+            </div>
 
             <div className="modalActions">
               <PrimaryButton

@@ -1,0 +1,223 @@
+.billDemographicsContainer {
+  min-height: 100vh;
+  background-color: #1a1a1a;
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.billDemographicsContent {
+  max-width: 1200px;
+  width: 100%;
+  background-color: #262626;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 2.5rem;
+}
+
+.billDemographicsHeader {
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.billDemographicsTitle {
+  font-size: 2rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 1.5rem;
+}
+
+.billInfoSection {
+  background-color: #2b2b2b;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.billInfoRow {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  align-items: flex-start;
+}
+
+.billInfoRow:last-child {
+  margin-bottom: 0;
+}
+
+.billInfoLabel {
+  font-weight: 600;
+  color: #9f9f9f;
+  min-width: 100px;
+  font-size: 0.9375rem;
+}
+
+.billInfoValue {
+  color: white;
+  flex: 1;
+  font-size: 0.9375rem;
+  word-break: break-word;
+}
+
+.billInfoLink {
+  color: #0474b6;
+  text-decoration: none;
+  font-size: 0.9375rem;
+  transition: color 0.2s;
+}
+
+.billInfoLink:hover {
+  color: #0365a0;
+  text-decoration: underline;
+}
+
+.billSummarySection {
+  background-color: #2b2b2b;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.billSummaryTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 1rem;
+}
+
+.billSummaryText {
+  color: #9f9f9f;
+  line-height: 1.6;
+  font-size: 0.9375rem;
+}
+
+.billDemographicsHeaderFooter {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.billDemographicsSubtitle {
+  font-size: 1rem;
+  color: #9f9f9f;
+  margin-bottom: 0.5rem;
+}
+
+.billDemographicsTotal {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #0474b6;
+  margin-top: 0.5rem;
+}
+
+.demographicsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
+}
+
+.demographicSection {
+  background-color: #2b2b2b;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.demographicSectionTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #0474b6;
+  width: 100%;
+  text-align: center;
+}
+
+.chartContainer {
+  width: 100%;
+  margin: 1rem 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Recharts legend styling for dark theme */
+.chartContainer .recharts-legend-wrapper {
+  color: white !important;
+}
+
+.chartContainer .recharts-legend-item-text {
+  color: white !important;
+  fill: white !important;
+}
+
+.chartContainer .recharts-legend-item {
+  color: white !important;
+}
+
+.demographicSummary {
+  margin-top: 0.5rem;
+  width: 100%;
+  text-align: center;
+}
+
+.demographicTotal {
+  font-size: 0.875rem;
+  color: #9f9f9f;
+  font-weight: 500;
+}
+
+.customTooltip {
+  background-color: #2b2b2b;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.tooltipLabel {
+  font-weight: 600;
+  color: white;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.tooltipValue {
+  color: #0474b6;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.noDataMessage {
+  text-align: center;
+  padding: 3rem;
+  color: #9f9f9f;
+  font-size: 1.125rem;
+}
+
+@media (max-width: 768px) {
+  .billDemographicsContainer {
+    padding: 1rem;
+  }
+
+  .billDemographicsContent {
+    padding: 1.5rem;
+  }
+
+  .billDemographicsTitle {
+    font-size: 1.5rem;
+  }
+
+  .demographicsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+

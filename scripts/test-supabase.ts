@@ -128,9 +128,9 @@ async function testSupabase() {
     console.log();
     
 
-    await userEndorseBill("cb8f2225-f8e0-4a29-90df-3d2bc3af60b5", "hr1234-118");
-    await userEndorseBill("38a5b373-9164-4406-a503-4813568a5003", "hr1234-118");
-    await userEndorseBill("c41dd100-b550-4025-8dd7-d1ad942ec4a4", "hr1234-118");
+    await userEndorseBill("25abb6bd-e348-4200-a961-5245bab4ae2d", "119_S_3060");
+    await userEndorseBill("48bb6e7b-eca0-45f4-80cd-95acc744631f", "119_S_3060");
+    await userEndorseBill("6855f9b2-27b9-4cde-8535-ba4c5709a73d", "119_S_3060");
 
     // const sponsors = await getBillSponsors("119_S_2403");
     // sponsors.forEach(sponsor => console.log(`   ✅ sponsor: ${JSON.stringify(sponsor)}`));
