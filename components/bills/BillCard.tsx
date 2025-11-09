@@ -98,36 +98,66 @@ export default function BillCard({ bill, billSummary, isExpanded = false, onCard
 
   const handleEndorseBill = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    try {
-      const response = await fetch("/api/endorsemenets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ billId: bill.id }),
-      });
-      if (response.ok) {
-        // Refresh status to ensure we have the latest state
-        await checkEndorsementStatus();
+    if (isEndorsed) {
+      try {
+        const response = await fetch("/api/remove-endorsement", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ billId: bill.id }),
+        });
+        if (response.ok) {
+          await checkEndorsementStatus();
+        }
+      } catch (error) {
+        console.error("Error removing endorsement:", error);
       }
-    } catch (error) {
-      console.error("Error endorsing bill:", error);
+    } else {
+      try {
+        const response = await fetch("/api/endorsemenets", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ billId: bill.id }),
+        });
+        if (response.ok) {
+          await checkEndorsementStatus();
+        }
+      } catch (error) {
+        console.error("Error endorsing bill:", error);
+      }
     }
   };
 
   const handleOpposeBill = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    try {
-      const response = await fetch("/api/opposals", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ billId: bill.id }),
-      });
-      if (response.ok) {
-        // Refresh status to ensure we have the latest state
-        await checkEndorsementStatus();
+    if (isOpposed) {
+      try {
+        const response = await fetch("/api/remove-endorsement", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ billId: bill.id }),
+        });
+        if (response.ok) {
+          await checkEndorsementStatus();
+        }
+      } catch (error) {
+        console.error("Error removing opposition:", error);
       }
-    } catch (error) {
-      console.error("Error opposing bill:", error);
+    } else {
+      try {
+        const response = await fetch("/api/opposals", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ billId: bill.id }),
+        });
+        if (response.ok) {
+          // Refresh status to ensure we have the latest state
+          await checkEndorsementStatus();
+        }
+      } catch (error) {
+        console.error("Error opposing bill:", error);
+      }
     }
+
   };
 
   return (
