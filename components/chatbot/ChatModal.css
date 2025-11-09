@@ -1,0 +1,157 @@
+.chatModalOverlay {
+  /* Remove absolute positioning - it will be a flex child */
+  position: relative;
+  z-index: 1001;
+  pointer-events: all;
+  display: flex;
+  align-items: stretch;
+  /* Match height of modal */
+  justify-content: flex-start;
+  flex: 0 1 auto;
+  /* Allow shrinking but don't grow beyond content */
+  min-width: 0;
+  /* Allow flex item to shrink below content size */
+}
+
+.chatModalOverlay.visible {
+  pointer-events: all;
+}
+
+.chatModalOverlay.visible .chatModalContainer {
+  pointer-events: all;
+}
+
+.chatModalContainer {
+  background-color: #202020;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+  min-width: 400px;
+  /* Minimum width */
+  max-width: 500px;
+  /* Maximum width */
+  max-height: 90vh;
+  /* Match modal max height */
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  padding-bottom: 0;
+  overflow: hidden;
+  position: relative;
+  opacity: 0;
+  transform: translateX(-50px);
+  transition: opacity 0.3s ease, transform 0.3s ease, width 0.3s ease, height 0.4s ease;
+  flex: 0 1 500px;
+  /* Don't grow beyond 500px, but can shrink */
+}
+
+.chatModalOverlay.visible .chatModalContainer {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.chatModalHeader {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.chatModalTitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+  margin: 0;
+}
+
+.chatModalContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Override chatbot styles to fit modal */
+.chatModalContent > div {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.chatModalContent .aui-root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: transparent;
+}
+
+.chatModalContent .aui-thread-root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: transparent;
+}
+
+.chatModalContent .aui-thread-viewport {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0;
+}
+
+/* Style the composer to be at the bottom */
+.chatModalContent .aui-composer-wrapper {
+  position: sticky;
+  bottom: 0;
+  background-color: #202020;
+  padding: 1rem 0;
+  margin: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+/* Custom scrollbar for chat modal */
+.chatModalContent .aui-thread-viewport::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chatModalContent .aui-thread-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chatModalContent .aui-thread-viewport::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.chatModalContent .aui-thread-viewport::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 1200px) {
+  .chatModalOverlay {
+    position: relative;
+    justify-content: center;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .chatModalContainer {
+    max-width: 100%;
+    min-width: 100%;
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .chatModalContainer {
+    min-width: 100%;
+    max-width: 100%;
+  }
+}
+
