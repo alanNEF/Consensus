@@ -4,6 +4,9 @@
  * Run this before starting the dev server to verify configuration
  */
 
+// Load .env file
+import "dotenv/config";
+
 const requiredEnvVars = {
   // Next.js
   NEXT_PUBLIC_SITE_URL: "Next.js public site URL",
