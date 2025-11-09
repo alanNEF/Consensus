@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import BillCard from "@/components/bills/BillCard";
 import type { Bill, BillSummary, Representative } from "@/types";
 import "./feed.css";
@@ -24,7 +24,7 @@ export default function FeedClient({
     representatives,
     billUrls
 }: FeedClientProps) {
-    const allCategories = [...preferredCategories, ...remainingCategories];
+    const allCategories = useMemo(() => [...preferredCategories, ...remainingCategories], [preferredCategories, remainingCategories]);
     const [expandedCardIndex, setExpandedCardIndex] = useState<Record<string, number>>({});
     const scrollRefs = useRef<Record<string, HTMLDivElement | null>>({});
     const [arrowStates, setArrowStates] = useState<Record<string, { left: boolean; right: boolean }>>({});
