@@ -4,10 +4,17 @@ import { Thread } from "./thread";
 import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import { useChatRuntime, AssistantChatTransport } from "@assistant-ui/react-ai-sdk";
 
-export default function ChatPage() {
+interface ChatPageProps {
+  billId?: string;
+}
+
+export default function ChatPage({ billId }: ChatPageProps) {
+  // Build API URL with billId query parameter if provided
+  const apiUrl = billId ? `/api/chat?billId=${encodeURIComponent(billId)}` : "/api/chat";
+  
   const runtime = useChatRuntime({
     transport: new AssistantChatTransport({
-      api: "/api/chat",  // ✅ Pass api here
+      api: apiUrl,
     }),
   });
 

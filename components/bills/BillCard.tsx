@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import type { Bill, BillSummary, SavedBill, Representative } from "@/types";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import ContactCardGallery from "@/components/contact/ContactCardGallery";
+import ChatModal from "@/components/chatbot/ChatModal";
 import "./BillCard.css";
 
 interface BillCardProps {
@@ -213,9 +214,13 @@ export default function BillCard({ bill, billSummary, billUrl, isExpanded = fals
 
       {isModalOpen && (
         <div
-          className={`modalOverlay ${isContactGalleryOpen ? 'hasGallery' : ''}`}
+          className={`modalOverlay ${isContactGalleryOpen ? 'hasGallery' : ''} hasChatModal`}
           onClick={handleCloseModal}
         >
+          <ChatModal
+            billId={bill.id}
+            isVisible={isModalOpen}
+          />
           <div
             className="modalContent"
             onClick={(e) => e.stopPropagation()}

@@ -139,6 +139,12 @@
   align-items: center;
 }
 
+/* When chat modal is present, adjust layout */
+.modalOverlay.hasChatModal {
+  justify-content: center;
+  align-items: center;
+}
+
 .modalContent {
   background-color: #202020;
   border-radius: 12px;
@@ -154,9 +160,21 @@
   /* Allow shrinking but don't grow beyond content */
 }
 
+/* When chat modal is visible, adjust modal width */
+.modalOverlay.hasChatModal .modalContent {
+  max-width: min(700px, calc(50vw - 1rem));
+  flex: 0 1 700px;
+}
+
 /* When gallery is visible, adjust modal width */
 .modalOverlay.hasGallery .modalContent {
   max-width: min(700px, calc(50vw - 1rem));
+  flex: 0 1 700px;
+}
+
+/* When both chat modal and gallery are visible, adjust modal width further */
+.modalOverlay.hasChatModal.hasGallery .modalContent {
+  max-width: min(700px, calc(33vw - 1rem));
   flex: 0 1 700px;
 }
 

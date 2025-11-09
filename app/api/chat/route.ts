@@ -31,6 +31,10 @@ function getOpenRouterClient() {
 
 export async function POST(req: Request) {
   try {
+    // Extract billId from URL query parameters
+    const url = new URL(req.url);
+    const billId = url.searchParams.get("billId") || null;
+    
     const { messages, tools } = await req.json();
     
     if (!messages || !Array.isArray(messages)) {
@@ -39,13 +43,6 @@ export async function POST(req: Request) {
         headers: { "Content-Type": "application/json" },
       });
     }
-
-    // const ip = req.headers.get("x-forwarded-for") ?? "ip";
-    // const { success } = await ratelimit.limit(ip);
-
-    // if (!success) {
-    //   return new Response("Rate limit exceeded", { status: 429 });
-    // }
 
     // Convert messages
     const modelMessages = convertToModelMessages(messages);
@@ -69,16 +66,17 @@ export async function POST(req: Request) {
     }
 
     // Retrieve relevant context from the specific bill using RAG
-    const billId = "119_HJRES_131";
+    // Use billId from query params, fallback to hardcoded value if not provided
+    const billIdToUse = billId || "";
     let ragContext = "";
-    if (userMessageText) {
+    if (userMessageText && billIdToUse) {
       try {
-        console.log(`Retrieving RAG context for bill: ${billId}`);
+        console.log(`Retrieving RAG context for bill: ${billIdToUse}`);
         const timeoutPromise = new Promise<string>((_, reject) =>
           setTimeout(() => reject(new Error("RAG timeout after 5 seconds")), 5000)
         );
         ragContext = await Promise.race([
-          getContext(billId, userMessageText),
+          getContext(billIdToUse, userMessageText),
           timeoutPromise,
         ]);
         console.log("RAG context retrieved, length:", ragContext.length);
