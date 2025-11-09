@@ -42,8 +42,8 @@ const EXTENDED_COLORS = [
   "#fcb69f",
 ];
 
-export default function DemographicsCharts({ 
-  counts, 
+export default function DemographicsCharts({
+  counts,
   chartHeight = 300,
   outerRadius = 100,
   innerRadius = 50

@@ -333,8 +333,8 @@ export default function BillCard({ bill, billSummary, billUrl, isExpanded = fals
                 <p style={{ color: "#9f9f9f", marginTop: "1rem" }}>Loading demographics...</p>
               ) : demographicsCounts ? (
                 <div style={{ marginTop: "1rem", width: "100%" }}>
-                  <DemographicsCharts 
-                    counts={demographicsCounts} 
+                  <DemographicsCharts
+                    counts={demographicsCounts}
                     chartHeight={200}
                     outerRadius={70}
                     innerRadius={35}
