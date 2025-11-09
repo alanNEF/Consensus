@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import BillCard from "@/components/bills/BillCard";
-import type { Bill } from "@/types";
+import type { Bill, BillSummary } from "@/types";
 import "./feed.css";
 
 interface FeedClientProps {
@@ -10,6 +10,7 @@ interface FeedClientProps {
     remainingCategories: string[];
     billsByCategoryPreferred: Map<string, Bill[]>;
     billsByCategoryRemaining: Map<string, Bill[]>;
+    billSummaries: Map<string, BillSummary>;
 }
 
 export default function FeedClient({
@@ -17,6 +18,7 @@ export default function FeedClient({
     remainingCategories,
     billsByCategoryPreferred,
     billsByCategoryRemaining,
+    billSummaries,
 }: FeedClientProps) {
     const allCategories = [...preferredCategories, ...remainingCategories];
     const [expandedCardIndex, setExpandedCardIndex] = useState<Record<string, number>>({});
@@ -134,6 +136,8 @@ export default function FeedClient({
         });
     };
 
+
+
     return (
         <div className="feedContainer">
             <div className="feedContent">
@@ -177,6 +181,7 @@ export default function FeedClient({
                                             <BillCard
                                                 bill={bill}
                                                 isExpanded={expandedIndex === index}
+                                                billSummary={billSummaries.get(bill.id) as BillSummary}
                                             />
                                         </div>
                                     ))}
@@ -233,6 +238,7 @@ export default function FeedClient({
                                         >
                                             <BillCard
                                                 bill={bill}
+                                                billSummary={billSummaries.get(bill.id) as BillSummary}
                                                 isExpanded={expandedIndex === index}
                                             />
                                         </div>

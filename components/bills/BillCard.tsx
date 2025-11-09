@@ -1,32 +1,38 @@
 "use client";
 
 import { useState } from "react";
-import type { Bill } from "@/types";
+import type { Bill, BillSummary } from "@/types";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import "./BillCard.css";
 
 interface BillCardProps {
   bill: Bill;
+  billSummary: BillSummary;
   isExpanded?: boolean;
   onCardClick?: (bill: Bill) => void;
 }
 
 const categoryColors: Record<string, string> = {
-  Health: "health",
+  Healthcare: "health",
+  Health: "health", // Keep for backwards compatibility
   Environment: "environment",
+  Environmentalism: "environment", // Match account page
   "Armed Services": "armedServices",
+  "Armed Forces": "armedServices", // Match account page
   Economy: "economy",
   Education: "education",
   Technology: "technology",
   Immigration: "immigration",
   "Agriculture and Food": "agriculture",
+  "Agriculture + Food": "agriculture", // Match account page
   "Government Operations": "government",
   Taxation: "taxation",
   "Civil Rights": "civilRights",
   "Criminal Justice": "criminalJustice",
+  "Foreign Policy": "foreignPolicy", // Add this
 };
 
-export default function BillCard({ bill, isExpanded = false, onCardClick }: BillCardProps) {
+export default function BillCard({ bill, billSummary, isExpanded = false, onCardClick }: BillCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleClick = () => {
@@ -44,7 +50,13 @@ export default function BillCard({ bill, isExpanded = false, onCardClick }: Bill
 
   const getCategoryClass = (category: string | undefined) => {
     if (!category) return "";
-    return categoryColors[category] || "";
+    // Try exact match first
+    if (categoryColors[category]) return categoryColors[category];
+    // Try case-insensitive match
+    const normalizedCategory = Object.keys(categoryColors).find(
+      key => key.toLowerCase() === category.toLowerCase()
+    );
+    return normalizedCategory ? categoryColors[normalizedCategory] : "";
   };
 
   const getPartyClass = (party: string) => {
@@ -60,14 +72,19 @@ export default function BillCard({ bill, isExpanded = false, onCardClick }: Bill
         onClick={handleClick}
       >
         <h3 className="billTitle">{bill.title}</h3>
-        {bill.description && (
-          <p className="billDescription">{bill.description}</p>
+        {billSummary.one_liner && (
+          <p className="billDescription">{billSummary.one_liner}</p>
         )}
-        {bill.category && (
+        {bill.categories && bill.categories.length > 0 && (
           <div className="billTags">
-            <span className={`categoryTag ${getCategoryClass(bill.category)}`}>
-              {bill.category}
-            </span>
+            {bill.categories.map((category, index) => (
+              <span
+                key={index}
+                className={`categoryTag ${getCategoryClass(category)}`}
+              >
+                {category}
+              </span>
+            ))}
           </div>
         )}
       </div>
@@ -88,14 +105,14 @@ export default function BillCard({ bill, isExpanded = false, onCardClick }: Bill
                 <svg className="modalSubheaderIcon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                Description
+                Summary
               </h3>
               <p className="modalText">
-                {bill.summary || bill.description || "No description available."}
+                {billSummary.summary_text || "No summary available."}
               </p>
             </div>
 
-            {bill.category && (
+            {bill.categories && bill.categories.length > 0 && (
               <div>
                 <h3 className="modalSubheader">
                   <svg className="modalSubheaderIcon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -104,9 +121,14 @@ export default function BillCard({ bill, isExpanded = false, onCardClick }: Bill
                   Topic Tags
                 </h3>
                 <div className="modalTags">
-                  <span className={`categoryTag ${getCategoryClass(bill.category)}`}>
-                    {bill.category}
-                  </span>
+                  {bill.categories.map((category, index) => (
+                    <span
+                      key={index}
+                      className={`categoryTag ${getCategoryClass(category)}`}
+                    >
+                      {category}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}

@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 export async function GET() {
     try {
         const session = await getSession();
-        
+
         if (!session?.user?.id) {
             return NextResponse.json(
                 { error: "Unauthorized" },
@@ -73,7 +73,7 @@ export async function GET() {
 export async function PUT(request: Request) {
     try {
         const session = await getSession();
-        
+
         if (!session?.user?.id) {
             return NextResponse.json(
                 { error: "Unauthorized" },
@@ -90,6 +90,10 @@ export async function PUT(request: Request) {
 
         const body = await request.json();
         const { residency, topics, race, religion, gender, age_range, party, income, education } = body;
+
+        // DEBUG: Log what we received
+        console.log("PUT request - Topics received:", topics);
+        console.log("PUT request - Topics JSON:", JSON.stringify(topics));
 
         const updateData: any = {
             updated_at: new Date().toISOString(),
@@ -147,6 +151,9 @@ export async function PUT(request: Request) {
             education: string | null;
         };
 
+        // DEBUG: Log what we're about to update
+        console.log("PUT request - Update data topics:", updateData.topics);
+
         const { data, error } = await supabase
             .from("users")
             .update(updateData as never)
@@ -155,6 +162,10 @@ export async function PUT(request: Request) {
             .single();
 
         const updatedUser = data as UserProfile | null;
+
+        // DEBUG: Log what was actually saved
+        console.log("PUT request - Topics after save:", updatedUser?.topics);
+        console.log("PUT request - Supabase error:", error);
 
         if (error || !updatedUser) {
             console.error("Supabase update error:", error);

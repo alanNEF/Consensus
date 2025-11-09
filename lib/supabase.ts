@@ -55,7 +55,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 
 if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error("Supabase credentials not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY");
+  throw new Error("Supabase credentials not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY");
 }
 
 // Create server client with service role key (bypasses RLS)
@@ -212,10 +212,15 @@ export async function getBillsByCategory(category: string, count: number = 15): 
     return [];
   }
 
+  // For array columns (TEXT[]), use .contains() to check if array contains the value
+  // For single TEXT columns, use .eq() instead
+  // The original code used .in("categories", [category]) which is incorrect for array columns
+  // .in() checks if column value is IN the provided array (opposite of what we want)
+  // .contains() checks if array column CONTAINS the provided values
   const { data, error } = await supabase
     .from("bills")
     .select("*")
-    .eq("category", category)
+    .contains("categories", [category])
     .order("date", { ascending: false })
     .limit(count);
 
@@ -225,7 +230,7 @@ export async function getBillsByCategory(category: string, count: number = 15): 
   }
   return (data || []) as Bill[];
 }
-  
+
 //Inserts the bill as endorse by the user, if they are opposing it it will change to endorsing
 export async function userEndorseBill(userId: string, billId: string): Promise<void> {
   if (!supabase) {
@@ -309,7 +314,7 @@ export async function getBillEndorsementDemographics(billId: string): Promise<Ar
  */
 export async function getBillEndorsementDemographicsCount(billId: string): Promise<Record<string, Record<string, number>>> {
   const demographics = await getBillEndorsementDemographics(billId);
-  
+
   // Initialize counts object for each demographic field
   const counts: Record<string, Record<string, number>> = {
     race: {},
@@ -326,7 +331,7 @@ export async function getBillEndorsementDemographicsCount(billId: string): Promi
   // Count each demographic category
   demographics.forEach((item) => {
     const user = item.user;
-    
+
     // Count single-value demographics
     const singleValueFields = [
       "race",
@@ -405,7 +410,7 @@ export async function getBillOppositionDemographics(billId: string): Promise<Arr
  */
 export async function getBillOppositionDemographicsCount(billId: string): Promise<Record<string, Record<string, number>>> {
   const demographics = await getBillOppositionDemographics(billId);
-  
+
   // Initialize counts object for each demographic field
   const counts: Record<string, Record<string, number>> = {
     race: {},
@@ -422,7 +427,7 @@ export async function getBillOppositionDemographicsCount(billId: string): Promis
   // Count each demographic category
   demographics.forEach((item) => {
     const user = item.user;
-    
+
     // Count single-value demographics
     const singleValueFields = [
       "race",
@@ -570,7 +575,7 @@ export function assembleLink(bill: Bill): string {
       if (parts.length >= 2) {
         const congress = parts[parts.length - 1]; // Last part is congress
         const prefix = parts[0]; // First part is type + number (e.g., "hr1234")
-        
+
         // Extract bill number by removing type prefix (hr, s, hres, sres, etc.)
         const billNumberMatch = prefix.match(/\d+$/);
         if (billNumberMatch) {
