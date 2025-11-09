@@ -34,3 +34,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Ignore Milvus, MinIO, and etcd volume data
+volumes/
+*.log
+*.tmp
+*.meta
+*.part*

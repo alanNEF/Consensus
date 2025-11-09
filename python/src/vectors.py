@@ -1,7 +1,7 @@
 """
 Bill ingestion and vector creation script: 
 - Fetches bills from Supabase database, generates embeddings using sentence-transformers, 
-  and stores embeddings in Milvus (vector database)
+  if they do not exist(or if you ask it to) and stores embeddings in Milvus (vector database)
 - Manages Milvus collection setup and vector storage
 """
 
