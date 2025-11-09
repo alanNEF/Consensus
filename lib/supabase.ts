@@ -277,6 +277,24 @@ export async function getUserOppositions(userId: string): Promise<SavedBill[]> {
   return (data || []) as SavedBill[];
 }
 
+export async function getUserResidency(userId: string): Promise<string | null> {
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("residency")
+    .eq("id", userId)
+    .single();
+
+  if (error) {
+    console.error("Error fetching user residency:", error);
+    return null;
+  }
+
+  return (data as { residency: string | null })?.residency || null;
+}
 //Inserts the bill as opposed by the user, if they are endorsing it it will change to opposed
 export async function userOpposeBill(userId: string, billId: string): Promise<void> {
   if (!supabase) {
@@ -517,7 +535,6 @@ export async function getBillSponsors(billId: string): Promise<string[]> {
   const result = data as { sponsors: string[] } | null;
   return result?.sponsors || [];
 }
-
 
 
 export async function getAllBills(): Promise<Bill[]> {
