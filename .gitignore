@@ -35,3 +35,20 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Ignore Milvus, MinIO, and etcd volume data
+volumes/
+*.log
+*.tmp
+*.meta
+*.part*
+
+
+# venv
+.venv/
+venv/
+
+# Python cache and build artifacts
+__pycache__/
+*.py[cod]
+*.so
+python/src/__pycache__/
