@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import type { Bill, BillSummary } from "@/types";
+import { useState, useEffect } from "react";
+import type { Bill, BillSummary, SavedBill } from "@/types";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import "./BillCard.css";
+import { userAgent } from "next/server";
 
 interface BillCardProps {
   bill: Bill;
@@ -34,13 +35,25 @@ const categoryColors: Record<string, string> = {
 
 export default function BillCard({ bill, billSummary, isExpanded = false, onCardClick }: BillCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const [isEndorsed, setIsEndorsed] = useState(false);
+  const [isUpposed, setIsUpposed] = useState(false);
+  useEffect(() => {
+    handleIsEndorsed();
+  }, []);
   const handleClick = () => {
     if (onCardClick) {
       onCardClick(bill);
     } else {
       setIsModalOpen(true);
     }
+  };
+
+  const handleIsEndorsed = async () => {
+    const response = await fetch("/api/user-endorsements", {
+      method: "GET",
+    });
+    const data = await response.json();
+    setIsEndorsed(data.endorsements.some((endorsement: SavedBill) => endorsement.bill_id === bill.id));
   };
 
   const handleCloseModal = (e: React.MouseEvent) => {
@@ -63,6 +76,16 @@ export default function BillCard({ bill, billSummary, isExpanded = false, onCard
     if (party === "REPUBLICAN") return "republican";
     if (party === "DEMOCRAT") return "democrat";
     return "thirdParty";
+  };
+
+  const handleEndorseBill = async () => {
+    const response = await fetch("/api/endorsements", {
+      method: "POST",
+      body: JSON.stringify({ billId: bill.id }),
+    });
+    if (response.ok) {
+      setIsEndorsed(true);
+    }
   };
 
   return (
