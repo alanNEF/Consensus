@@ -9,6 +9,17 @@
   overflow: hidden;
 }
 
+.logoContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+.logoContainer svg {
+  width: 75px;
+  height: 75px;
+}
+
 .loginContainer::before {
   content: "";
   position: absolute;

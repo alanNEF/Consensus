@@ -40,6 +40,7 @@ export default function TopNav() {
       <div className="topNavContainer">
         <Link href="/feed" className="topNavTitle">
           <Logo />
+          <span className="topNavTitleText">Consensi</span>
         </Link>
         <div className="topNavRight">
           <div className="topNavSearchContainer">
