@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { Bill, BillSummary, SavedBill } from "@/types";
+import type { Bill, BillSummary, SavedBill, Representative } from "@/types";
 import PrimaryButton from "@/components/ui/PrimaryButton";
+import ContactCardGallery from "@/components/contact/ContactCardGallery";
 import "./BillCard.css";
 
 interface BillCardProps {
@@ -11,6 +12,7 @@ interface BillCardProps {
   billUrl: string;
   isExpanded?: boolean;
   onCardClick?: (bill: Bill) => void;
+  representatives?: Representative[];
 }
 
 const categoryColors: Record<string, string> = {
@@ -33,8 +35,9 @@ const categoryColors: Record<string, string> = {
   "Foreign Policy": "foreignPolicy", // Add this
 };
 
-export default function BillCard({ bill, billSummary, billUrl, isExpanded = false, onCardClick }: BillCardProps) {
+export default function BillCard({ bill, billSummary, billUrl, isExpanded = false, onCardClick, representatives }: BillCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isContactGalleryOpen, setIsContactGalleryOpen] = useState(false);
   const [isEndorsed, setIsEndorsed] = useState(false);
   const [isOpposed, setIsOpposed] = useState(false);
 
@@ -76,8 +79,31 @@ export default function BillCard({ bill, billSummary, billUrl, isExpanded = fals
   };
 
   const handleCloseModal = (e: React.MouseEvent) => {
+    // Only close if clicking directly on the overlay, not on modal content or gallery
+    const target = e.target as HTMLElement;
+    const currentTarget = e.currentTarget as HTMLElement;
+
+    // Check if clicking directly on the overlay background
+    if (target === currentTarget) {
+      setIsModalOpen(false);
+      setIsContactGalleryOpen(false);
+      return;
+    }
+
+    // Also check if clicking on the gallery overlay (but not the container)
+    if (target.classList.contains('contactGalleryOverlay')) {
+      setIsModalOpen(false);
+      setIsContactGalleryOpen(false);
+    }
+  };
+
+  const handleContactRepresentatives = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsModalOpen(false);
+    setIsContactGalleryOpen(true);
+  };
+
+  const handleCloseContactGallery = () => {
+    setIsContactGalleryOpen(false);
   };
 
   const getCategoryClass = (category: string | undefined) => {
@@ -186,8 +212,15 @@ export default function BillCard({ bill, billSummary, billUrl, isExpanded = fals
       </div>
 
       {isModalOpen && (
-        <div className="modalOverlay" onClick={handleCloseModal}>
-          <div className="modalContent" onClick={(e) => e.stopPropagation()}>
+        <div
+          className={`modalOverlay ${isContactGalleryOpen ? 'hasGallery' : ''}`}
+          onClick={handleCloseModal}
+        >
+          <div
+            className="modalContent"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <button className="modalClose" onClick={handleCloseModal}>
               ×
             </button>
@@ -331,11 +364,23 @@ export default function BillCard({ bill, billSummary, billUrl, isExpanded = fals
                   "Oppose Bill"
                 )}
               </PrimaryButton>
-              <PrimaryButton variant="secondary" className="flex-1">
-                Contact Representative
+              <PrimaryButton
+                variant="secondary"
+                className="flex-1"
+                onClick={handleContactRepresentatives}
+              >
+                Contact Representatives
               </PrimaryButton>
             </div>
           </div>
+
+          {isContactGalleryOpen && (
+            <ContactCardGallery
+              representatives={representatives || []}
+              isVisible={isContactGalleryOpen}
+              onClose={handleCloseContactGallery}
+            />
+          )}
         </div>
       )}
     </>

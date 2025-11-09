@@ -3,6 +3,9 @@
  * Environment variable sanity check script
  * Run this before starting the dev server to verify configuration
  */
+import { config } from "dotenv";
+import path from "path";
+config({ path: path.join(process.cwd(), ".env") });
 
 // Load .env file
 import "dotenv/config";
