@@ -135,7 +135,7 @@ export default function YourBillsPage() {
       <div className="yourBillsContent">
         <div className="yourBillsHeader">
           <h1 className="yourBillsTitle">Your Bills</h1>
-          <p className="yourBillsSubtitle">Bills you've endorsed and saved</p>
+          <p className="yourBillsSubtitle">Bills you&apos;ve endorsed and saved</p>
         </div>
         <div className="searchBarContainer">
           <input

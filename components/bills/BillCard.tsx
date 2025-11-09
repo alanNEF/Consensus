@@ -14,6 +14,9 @@ interface BillCardProps {
   isExpanded?: boolean;
   onCardClick?: (bill: Bill) => void;
   representatives?: Representative[];
+  isEndorsed?: boolean;
+  onEndorse?: (billId: string) => void;
+  onUnendorse?: (billId: string) => void;
 }
 
 const categoryColors: Record<string, string> = {
@@ -36,15 +39,30 @@ const categoryColors: Record<string, string> = {
   "Foreign Policy": "foreignPolicy", // Add this
 };
 
-export default function BillCard({ bill, billSummary, billUrl, isExpanded = false, onCardClick, representatives }: BillCardProps) {
+export default function BillCard({
+  bill,
+  billSummary,
+  billUrl,
+  isExpanded = false,
+  onCardClick,
+  representatives,
+  isEndorsed: isEndorsedProp,
+  onEndorse,
+  onUnendorse,
+}: BillCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isContactGalleryOpen, setIsContactGalleryOpen] = useState(false);
-  const [isEndorsed, setIsEndorsed] = useState(false);
+  const [isEndorsed, setIsEndorsed] = useState(isEndorsedProp ?? false);
   const [isOpposed, setIsOpposed] = useState(false);
 
   useEffect(() => {
-    checkEndorsementStatus();
-  }, [bill.id]);
+    if (isEndorsedProp !== undefined) {
+      setIsEndorsed(isEndorsedProp);
+    } else {
+      checkEndorsementStatus();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bill.id, isEndorsedProp]);
 
   const checkEndorsementStatus = async () => {
     try {
@@ -66,7 +84,7 @@ export default function BillCard({ bill, billSummary, billUrl, isExpanded = fals
           (opposition: SavedBill) => opposition.bill_id === bill.id
         ) || false
       );
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error checking endorsement status:", error);
     }
   };
@@ -134,9 +152,14 @@ export default function BillCard({ bill, billSummary, billUrl, isExpanded = fals
           body: JSON.stringify({ billId: bill.id }),
         });
         if (response.ok) {
-          await checkEndorsementStatus();
+          setIsEndorsed(false);
+          if (onUnendorse) {
+            onUnendorse(bill.id);
+          } else {
+            await checkEndorsementStatus();
+          }
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Error removing endorsement:", error);
       }
     } else {
@@ -147,9 +170,14 @@ export default function BillCard({ bill, billSummary, billUrl, isExpanded = fals
           body: JSON.stringify({ billId: bill.id }),
         });
         if (response.ok) {
-          await checkEndorsementStatus();
+          setIsEndorsed(true);
+          if (onEndorse) {
+            onEndorse(bill.id);
+          } else {
+            await checkEndorsementStatus();
+          }
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Error endorsing bill:", error);
       }
     }
@@ -167,7 +195,7 @@ export default function BillCard({ bill, billSummary, billUrl, isExpanded = fals
         if (response.ok) {
           await checkEndorsementStatus();
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Error removing opposition:", error);
       }
     } else {
@@ -181,7 +209,7 @@ export default function BillCard({ bill, billSummary, billUrl, isExpanded = fals
           // Refresh status to ensure we have the latest state
           await checkEndorsementStatus();
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Error opposing bill:", error);
       }
     }

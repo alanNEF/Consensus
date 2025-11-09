@@ -43,7 +43,6 @@ export interface CongressBill {
  */
 export async function fetchBillsFromCongress(
   congress: number = 118,
-  chamber: "house" | "senate" | "both" = "both",
   limit: number = 20
 ): Promise<CongressBill[]> {
   if (!CONGRESS_GOV_API_KEY) {

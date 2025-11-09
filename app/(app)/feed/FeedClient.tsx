@@ -146,7 +146,7 @@ export default function FeedClient({
         <div className="feedContainer">
             <div className="feedContent">
                 <div className="feedHeader">
-                    <h1 className="feedTitle">Bills you're interested in</h1>
+                    <h1 className="feedTitle">Bills you&apos;re interested in</h1>
                     <p className="feedSubtitle">Stay informed about legislation that matters to you.</p>
                 </div>
 

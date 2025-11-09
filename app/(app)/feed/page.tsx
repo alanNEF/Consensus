@@ -3,7 +3,6 @@ import { getSession } from "@/lib/auth";
 import { getUserById, getBillsByCategory, getBillSummary, assembleLink } from "@/lib/supabase";
 import FeedClient from "./FeedClient";
 import { Bill, BillSummary } from "@/types";
-import { getUserResidency } from "@/lib/supabase";
 import { config } from "dotenv";
 import path from "path";
 config({ path: path.join(process.cwd(), ".env") });
