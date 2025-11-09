@@ -34,7 +34,7 @@ export interface Bill {
     created_at: string;
     updated_at: string;
     // Extended fields for UI
-    category?: string;
+    categories?: string[];
     bill_text: string;
     affectedGroups?: string[];
     sponsorDetails?: Sponsor[];
@@ -44,6 +44,7 @@ export interface BillSummary {
     id: string;
     bill_id: string;
     summary_text: string;
+    one_liner: string;
     created_at: string;
 }
 

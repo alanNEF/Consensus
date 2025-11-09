@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { getUserById, getBillsByCategory } from "@/lib/supabase";
+import { getUserById, getBillsByCategory, getBillSummary } from "@/lib/supabase";
 import FeedClient from "./FeedClient";
+import { Bill, BillSummary } from "@/types";
 
 export default async function FeedPage() {
   const session = await getSession();
@@ -37,20 +38,37 @@ export default async function FeedPage() {
   );
 
   // Fetch bills for preferred categories
-  const billsByCategoryPreferred = new Map<string, any[]>();
+  const billsByCategoryPreferred = new Map<string, Bill[]>();
   for (const category of preferredCategories) {
     const bills = await getBillsByCategory(category);
     billsByCategoryPreferred.set(category, bills);
   }
 
   // Fetch bills for remaining categories
-  const billsByCategoryRemaining = new Map<string, any[]>();
+  const billsByCategoryRemaining = new Map<string, Bill[]>();
   for (const category of remainingCategories) {
     const bills = await getBillsByCategory(category);
     billsByCategoryRemaining.set(category, bills);
   }
 
-  console.log(billsByCategoryPreferred);
+  const billSummaries = new Map<string, BillSummary>();
+  for (const [, bills] of billsByCategoryPreferred.entries()) {
+    for (const bill of bills) {
+      const sum = await getBillSummary(bill.id || "");
+      if (sum) {
+        billSummaries.set(bill.id, sum as BillSummary);
+      }
+    }
+  }
+
+  for (const [, bills] of billsByCategoryRemaining.entries()) {
+    for (const bill of bills) {
+      const sum = await getBillSummary(bill.id || "");
+      if (sum) {
+        billSummaries.set(bill.id, sum as BillSummary);
+      }
+    }
+  }
 
   return (
     <FeedClient
@@ -58,6 +76,7 @@ export default async function FeedPage() {
       remainingCategories={remainingCategories}
       billsByCategoryPreferred={billsByCategoryPreferred}
       billsByCategoryRemaining={billsByCategoryRemaining}
+      billSummaries={billSummaries}
     />
   );
 }
