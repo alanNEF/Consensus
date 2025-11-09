@@ -542,9 +542,6 @@ export async function insertBillSummary(
  */
 export function assembleLink(bill: Bill): string {
   // If bill already has a URL, use it
-  if (bill.url) {
-    return bill.url;
-  }
 
   // Validate required fields
   if (!bill.id) {
