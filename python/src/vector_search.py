@@ -29,7 +29,7 @@ def search_bills(query: str, top_k: int = 10, metric: str = "L2") -> List[Dict[s
     """
     try:
         # Generate embedding for the query
-        print(f"🔍 Searching for: '{query}'")
+        print(f"Searching for: '{query}'")
         query_embedding = generate_embedding(query)
         
         if query_embedding is None:
@@ -116,7 +116,7 @@ def search_bills(query: str, top_k: int = 10, metric: str = "L2") -> List[Dict[s
                     })
         
         metric_display = "COSINE-like" if using_cosine else search_metric
-        print(f"  ✅ Found {len(search_results)} results above {similarity_threshold} similarity threshold (using {metric_display} similarity)")
+        print(f"Found {len(search_results)} results above {similarity_threshold} similarity threshold (using {metric_display} similarity)")
         return search_results
         
     except Exception as e:
@@ -170,7 +170,7 @@ if __name__ == "__main__":
     Example query for Climate Change related bills using cosine similarity.
     """
     print("=" * 60)
-    print("🌍 Climate Change Bill Search")
+    print("Climate Change Bill Search")
     print("=" * 60)
     print()
     
@@ -185,7 +185,7 @@ if __name__ == "__main__":
     results = search_bills_with_details(query, top_k=10, metric="COSINE")
     
     if results:
-        print(f"📋 Found {len(results)} climate change related bills:")
+        print(f"Found {len(results)} climate change related bills:")
         print()
         for i, result in enumerate(results, 1):
             print(f"{i}. {result.get('title', 'Unknown Title')}")
@@ -199,7 +199,7 @@ if __name__ == "__main__":
                 print(f"   Categories: {', '.join(result.get('categories', []))}")
             print()
     else:
-        print("  ⚠️  No results found.")
-        print("  💡 Make sure vectors have been created by running vectors.py")
+        print("No results found.")
+        print("Make sure vectors have been created by running vectors.py")
         print()
 

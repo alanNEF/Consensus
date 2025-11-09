@@ -35,11 +35,11 @@ MILVUS_COLLECTION_NAME = os.getenv("MILVUS_COLLECTION_NAME", "bill_embeddings")
 
 # Check if required env vars are set
 if not SUPABASE_URL or SUPABASE_URL == "replace_me":
-    print("⚠️  SUPABASE_URL not configured. Using mock mode.")
+    print("!!SUPABASE_URL not configured. Using mock mode.!!")
     SUPABASE_URL = None
 
 if not SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SERVICE_ROLE_KEY == "replace_me":
-    print("⚠️  SUPABASE_SERVICE_ROLE_KEY not configured. Using mock mode.")
+    print("!!SUPABASE_SERVICE_ROLE_KEY not configured. Using mock mode.!!")
     SUPABASE_SERVICE_ROLE_KEY = None
 
 # Initialize sentence transformer model (lazy loading)
@@ -349,7 +349,7 @@ def clear_milvus_database() -> bool:
         
         # Drop the collection
         utility.drop_collection(MILVUS_COLLECTION_NAME)
-        print(f"  ✅ Successfully dropped collection '{MILVUS_COLLECTION_NAME}'")
+        print(f"   Successfully dropped collection '{MILVUS_COLLECTION_NAME}'")
         return True
         
     except Exception as e:
@@ -426,43 +426,43 @@ def ingest_bills(force_recreate: bool = False) -> bool:
     Returns:
         True if vectors were created/updated, False if skipped or failed
     """
-    print("🚀 Starting bill ingestion...")
+    print("Starting bill ingestion...")
     print()
 
     # Check if vectors already exist
-    print("🔍 Checking if vectors already exist...")
+    print("Checking if vectors already exist...")
     vectors_exist = check_vectors_exist()
     
     if vectors_exist:
         if force_recreate:
-            print("  ⚠️  Vectors found, but force_recreate=True. Clearing existing vectors...")
-            print("🗑️  Clearing Milvus database...")
+            print("Vectors found, but force_recreate=True. Clearing existing vectors...")
+            print("Clearing Milvus database...")
             if clear_milvus_database():
-                print("  ✅ Milvus database cleared")
+                print("Milvus database cleared")
             else:
-                print("  ⚠️  Failed to clear Milvus database")
+                print("Failed to clear Milvus database!!")
             print()
         else:
-            print("  ✅ Vectors already exist in Milvus collection")
-            print("  💡 Skipping ingestion. Use force_recreate=True to recreate vectors.")
+            print("Vectors already exist in Milvus collection")
+            print("Skipping ingestion. Use force_recreate=True to recreate vectors.")
             print()
             return False  # Vectors exist, skipped ingestion
     else:
-        print("  ℹ️  No existing vectors found. Proceeding with ingestion...")
+        print("No existing vectors found. Proceeding with ingestion...")
         print()
 
     # Setup Milvus collection once
     print("📦 Setting up Milvus collection...")
     collection = setup_milvus_collection()
     if collection is None:
-        print("  ❌ Failed to setup Milvus collection")
-        print("  💡 Make sure Milvus is running: docker-compose up -d milvus")
+        print("Failed to setup Milvus collection")
+        print("Make sure Milvus is running: docker-compose up -d milvus")
         return False
-    print("  ✅ Milvus collection ready")
+    print("Milvus collection ready")
     print()
 
     # Fetch all bills from database (with pagination to handle >1000 bills)
-    print("📥 Fetching bills from database...")
+    print("Fetching bills from database...")
     all_bills = []
     page_size = 1000
     offset = 0
@@ -480,8 +480,8 @@ def ingest_bills(force_recreate: bool = False) -> bool:
         offset += page_size
     
     if not all_bills:
-        print("  ❌ No bills found in database")
-        print("  💡 Make sure bills are already in the Supabase database")
+        print("No bills found in database")
+        print("Make sure bills are already in the Supabase database")
         return False
     
     print(f"  Found {len(all_bills)} bills total")
@@ -524,25 +524,25 @@ def ingest_bills(force_recreate: bool = False) -> bool:
             success = upsert_bill_embedding_milvus(bill_id, embedding, collection=collection)
 
             if success:
-                print(f"  ✅ Successfully processed {bill_id}")
+                print(f"    Successfully processed {bill_id}")
                 successful += 1
             else:
-                print(f"  ⚠️  Failed to store embedding for {bill_id}")
+                print(f"   Failed to store embedding for {bill_id}")
                 failed += 1
         except Exception as e:
-            print(f"  ❌ Error processing {bill_id}: {e}")
+            print(f"    Error processing {bill_id}: {e}")
             failed += 1
 
         print()
 
-    print("✅ Ingestion complete!")
+    print("  Ingestion complete!")
     print()
-    print(f"📊 Summary:")
+    print(f"  Summary:")
     print(f"   - Total bills: {len(all_bills)}")
     print(f"   - Successfully processed: {successful}")
     print(f"   - Failed: {failed}")
     print()
-    print("💡 Next steps:")
+    print("  Next steps:")
     print("   - Verify embeddings in Milvus vector database")
     print("   - Bills are linked between databases via bill_id")
     print("   - Use bill_id to join SQL metadata with Milvus vectors for search")
@@ -563,7 +563,7 @@ def get_milvus_collection():
         # Check if collection exists
         if not utility.has_collection(MILVUS_COLLECTION_NAME):
             print(f"  [ERROR] Collection '{MILVUS_COLLECTION_NAME}' does not exist")
-            print(f"  💡 Run setup_milvus.py or ingest.py to create the collection")
+            print(f"    Run setup_milvus.py or ingest.py to create the collection")
             return None
         
         # Get and load collection
@@ -588,25 +588,25 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     # Check if vectors already exist
-    print("🔍 Checking if vectors already exist...")
+    print("  Checking if vectors already exist...")
     vectors_exist = check_vectors_exist()
     
     if vectors_exist and not args.force_recreate:
-        print("  ✅ Vectors already exist in Milvus collection")
-        print("  💡 Use --force-recreate to recreate vectors")
+        print("    Vectors already exist in Milvus collection")
+        print("    Use --force-recreate to recreate vectors")
         print()
     else:
         # Create vectors
         if vectors_exist and args.force_recreate:
-            print("  ⚠️  Vectors found, but force_recreate=True. Recreating vectors...")
+            print("     Vectors found, but force_recreate=True. Recreating vectors...")
             print()
         
         # Run ingestion
         vectors_created = ingest_bills(force_recreate=args.force_recreate)
         
         if vectors_created:
-            print("  ✅ Vector creation complete!")
+            print("    Vector creation complete!")
         else:
-            print("  ⚠️  Vector creation failed or was skipped")
+            print("     Vector creation failed or was skipped!!!!")
         print()
 

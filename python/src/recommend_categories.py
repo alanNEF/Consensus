@@ -28,11 +28,11 @@ SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
 # Check if required env vars are set
 if not SUPABASE_URL or SUPABASE_URL == "replace_me":
-    print("⚠️  SUPABASE_URL not configured. Using mock mode.")
+    print("SUPABASE_URL not configured. Using mock mode.")
     SUPABASE_URL = None
 
 if not SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SERVICE_ROLE_KEY == "replace_me":
-    print("⚠️  SUPABASE_SERVICE_ROLE_KEY not configured. Using mock mode.")
+    print("SUPABASE_SERVICE_ROLE_KEY not configured. Using mock mode.")
     SUPABASE_SERVICE_ROLE_KEY = None
 
 # Bill classification categories
@@ -53,9 +53,10 @@ def get_classifier():
         _classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
     return _classifier
 
-
 def softmax(x: np.ndarray) -> np.ndarray:
-    """Compute softmax values for each sets of scores in x."""
+    """Compute softmax values for each sets of scores in x.
+    For normalization of scores.
+    """
     e_x = np.exp(x - np.max(x))
     return e_x / e_x.sum(axis=0)
 
@@ -142,9 +143,9 @@ def get_bill_text(bill_id: str) -> Optional[str]:
 
 def update_bill_categories(bill_id: str, categories: List[str]) -> bool:
     """Update bill categories in the database"""
-    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
-        print(f"  [MOCK] Would update categories for bill {bill_id}: {categories}")
-        return True  # Return True in mock mode to allow testing
+    # if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+    #     print(f"  [MOCK] Would update categories for bill {bill_id}: {categories}")
+    #     return True  # Return True in mock mode to allow testing
     
     try:
         from supabase import create_client, Client
@@ -161,6 +162,7 @@ def update_bill_categories(bill_id: str, categories: List[str]) -> bool:
         else:
             print(f"  [WARNING] Update returned no data for bill {bill_id}")
             return False
+
     except Exception as e:
         print(f"  [ERROR] Failed to update categories for {bill_id}: {e}")
         import traceback
@@ -191,7 +193,7 @@ def classify_bill_in_database(bill: Dict[str, Any], threshold_std: float = 0.8) 
         classification_results = classify_bill_text(classification_text, threshold_std)
         
         # Print each prediction from the AI model
-        print(f"  📊 AI Model Predictions for {bill_id}:")
+        print(f"AI Model Predictions for {bill_id}:")
         if classification_results:
             for label, score in classification_results:
                 print(f"     - {label}: {score:.4f} ({score*100:.2f}%)")
@@ -203,17 +205,17 @@ def classify_bill_in_database(bill: Dict[str, Any], threshold_std: float = 0.8) 
         
         # Update database
         if categories:
-            print(f"  💾 Updating database with categories: {categories}")
+            print(f"Updating database with categories: {categories}")
             success = update_bill_categories(bill_id, categories)
             if success:
-                print(f"  ✅ Classified: {', '.join(categories)}")
+                print(f"Classified: {', '.join(categories)}")
             else:
-                print(f"  ⚠️  Classification succeeded but update failed")
+                print(f"Classification succeeded but update failed!!!!")
             return success
         else:
-            print(f"  ⚠️  No categories found (threshold too high)")
+            print(f"No categories found (threshold too high)!!!!")
             # Update with empty categories
-            print(f"  💾 Updating database with empty categories")
+            print(f"Updating database with empty categories")
             success = update_bill_categories(bill_id, [])
             return success
             
@@ -224,11 +226,11 @@ def classify_bill_in_database(bill: Dict[str, Any], threshold_std: float = 0.8) 
 
 def classify_all_bills(threshold_std: float = 0.8, limit: Optional[int] = None, offset: int = 0, update_existing: bool = False):
     """Classify all bills in the database"""
-    print("🏷️  Starting bill classification...")
+    print("Starting bill classification...")
     print()
     
     # Fetch bills from database (with pagination if no limit specified)
-    print("📥 Fetching bills from database...")
+    print("Fetching bills from database...")
     
     if limit is not None:
         # If limit is specified, use it directly (for backward compatibility)
@@ -252,10 +254,10 @@ def classify_all_bills(threshold_std: float = 0.8, limit: Optional[int] = None, 
             current_offset += page_size
     
     if not all_bills:
-        print("  No bills found in database.")
+        print("No bills found in database.")
         return
     
-    print(f"  Found {len(all_bills)} bills total")
+    print(f"Found {len(all_bills)} bills total")
     print()
     
     # Process each bill
@@ -277,13 +279,13 @@ def classify_all_bills(threshold_std: float = 0.8, limit: Optional[int] = None, 
         print()
     
     # Summary
-    print("✅ Classification complete!")
+    print("Classification complete!")
     print()
-    print(f"📊 Summary:")
-    print(f"   - Total bills: {len(all_bills)}")
-    print(f"   - Successfully classified: {successful}")
-    print(f"   - Failed: {failed}")
-    print(f"   - Skipped: {skipped}")
+    print(f"Summary:")
+    print(f"- Total bills: {len(all_bills)}")
+    print(f"- Successfully classified: {successful}")
+    print(f"- Failed: {failed}")
+    print(f"- Skipped: {skipped}")
     print()
 
 
