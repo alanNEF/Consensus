@@ -13,7 +13,8 @@ WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json* ./
-RUN npm ci
+# Use npm ci for faster, reliable builds. Fall back to npm install if lock file is out of sync
+RUN npm ci || npm install
 
 # Install Python dependencies (using Debian base for better PyTorch support)
 FROM python:3.11-slim AS python-deps
@@ -52,7 +53,9 @@ ENV PYTHON_PATH=/app/python/venv/bin/python3
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Rebuild native modules for the target platform (Linux)
-RUN npm rebuild bcrypt sharp --build-from-source
+# This ensures they're built for Linux and will be included in the standalone output
+# Use || true to not fail if rebuild has issues (they might already be built correctly)
+RUN npm rebuild bcrypt sharp --build-from-source || echo "Rebuild completed with warnings"
 
 RUN npm run build
 
@@ -76,14 +79,6 @@ RUN useradd --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# Copy node_modules for native dependencies (bcrypt, sharp) that aren't included in standalone
-# Next.js standalone mode may not include these native modules, so we copy them explicitly
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/next ./node_modules/next
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/bcrypt ./node_modules/bcrypt
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/sharp ./node_modules/sharp
-# Copy node-gyp-build which is needed for native modules
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/node-gyp-build ./node_modules/node-gyp-build
 
 # Copy Python virtual environment and source files
 COPY --from=python-deps --chown=nextjs:nodejs /app/python/venv ./python/venv

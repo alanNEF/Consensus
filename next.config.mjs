@@ -3,6 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   output: 'standalone', // Required for Docker deployment
   // Ensure native modules are included in standalone build
+  // Empty array means Next.js will handle all packages normally
   serverExternalPackages: [],
   experimental: {
     serverActions: {
