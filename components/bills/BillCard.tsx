@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import type { Bill, BillSummary, SavedBill } from "@/types";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import "./BillCard.css";
-import { userAgent } from "next/server";
 
 interface BillCardProps {
   bill: Bill;
@@ -36,24 +35,43 @@ const categoryColors: Record<string, string> = {
 export default function BillCard({ bill, billSummary, isExpanded = false, onCardClick }: BillCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEndorsed, setIsEndorsed] = useState(false);
-  const [isUpposed, setIsUpposed] = useState(false);
+  const [isOpposed, setIsOpposed] = useState(false);
+
   useEffect(() => {
-    handleIsEndorsed();
-  }, []);
+    checkEndorsementStatus();
+  }, [bill.id]);
+
+  const checkEndorsementStatus = async () => {
+    try {
+      const [endorsementsResponse, oppositionsResponse] = await Promise.all([
+        fetch("/api/user-endorsements"),
+        fetch("/api/user-oppositions"),
+      ]);
+
+      const endorsementsData = await endorsementsResponse.json();
+      const oppositionsData = await oppositionsResponse.json();
+
+      setIsEndorsed(
+        endorsementsData.endorsements?.some(
+          (endorsement: SavedBill) => endorsement.bill_id === bill.id
+        ) || false
+      );
+      setIsOpposed(
+        oppositionsData.oppositions?.some(
+          (opposition: SavedBill) => opposition.bill_id === bill.id
+        ) || false
+      );
+    } catch (error) {
+      console.error("Error checking endorsement status:", error);
+    }
+  };
+
   const handleClick = () => {
     if (onCardClick) {
       onCardClick(bill);
     } else {
       setIsModalOpen(true);
     }
-  };
-
-  const handleIsEndorsed = async () => {
-    const response = await fetch("/api/user-endorsements", {
-      method: "GET",
-    });
-    const data = await response.json();
-    setIsEndorsed(data.endorsements.some((endorsement: SavedBill) => endorsement.bill_id === bill.id));
   };
 
   const handleCloseModal = (e: React.MouseEvent) => {
@@ -78,13 +96,37 @@ export default function BillCard({ bill, billSummary, isExpanded = false, onCard
     return "thirdParty";
   };
 
-  const handleEndorseBill = async () => {
-    const response = await fetch("/api/endorsements", {
-      method: "POST",
-      body: JSON.stringify({ billId: bill.id }),
-    });
-    if (response.ok) {
-      setIsEndorsed(true);
+  const handleEndorseBill = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const response = await fetch("/api/endorsemenets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ billId: bill.id }),
+      });
+      if (response.ok) {
+        // Refresh status to ensure we have the latest state
+        await checkEndorsementStatus();
+      }
+    } catch (error) {
+      console.error("Error endorsing bill:", error);
+    }
+  };
+
+  const handleOpposeBill = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const response = await fetch("/api/opposals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ billId: bill.id }),
+      });
+      if (response.ok) {
+        // Refresh status to ensure we have the latest state
+        await checkEndorsementStatus();
+      }
+    } catch (error) {
+      console.error("Error opposing bill:", error);
     }
   };
 
@@ -214,8 +256,49 @@ export default function BillCard({ bill, billSummary, isExpanded = false, onCard
             )}
 
             <div className="modalActions">
-              <PrimaryButton variant="primary" className="flex-1">
-                Endorse Bill
+              <PrimaryButton
+                variant={isEndorsed ? "primary" : "secondary"}
+                className="flex-1"
+                onClick={handleEndorseBill}
+              >
+                {isEndorsed ? (
+                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path
+                        d="M16.6667 5L7.50004 14.1667L3.33337 10"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    Endorsed
+                  </span>
+                ) : (
+                  "Endorse Bill"
+                )}
+              </PrimaryButton>
+              <PrimaryButton
+                variant={isOpposed ? "primary" : "secondary"}
+                className="flex-1"
+                onClick={handleOpposeBill}
+              >
+                {isOpposed ? (
+                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path
+                        d="M15 5L5 15M5 5L15 15"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    Opposed
+                  </span>
+                ) : (
+                  "Oppose Bill"
+                )}
               </PrimaryButton>
               <PrimaryButton variant="secondary" className="flex-1">
                 Contact Representative
