@@ -6,6 +6,7 @@ import { signIn } from "next-auth/react";
 import Link from "next/link";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import "./login.css";
+import Logo from "@/components/nav/Logo";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -58,7 +59,10 @@ export default function LoginPage() {
   return (
     <div className="loginContainer">
       <div className="loginCard">
-        <h1 className="loginTitle">Bill Tracker</h1>
+        <div className="logoContainer">
+          <Logo />
+          <h3 className="loginTitle">Consensi</h3>
+        </div>
         <p className="loginSlogan">Understand Congress. Make Your Voice Heard.</p>
         <form className="loginForm" onSubmit={handleSubmit}>
           <div className="formGroup">
