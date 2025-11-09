@@ -5,11 +5,16 @@
   padding: 1.5rem;
   min-width: 280px;
   width: 280px;
+  min-height: 300px;
+  max-height: 300px;
   transition: all 0.3s ease;
   cursor: pointer;
   position: relative;
   flex-shrink: 0;
   backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .billCard.expanded {
@@ -28,6 +33,12 @@
   color: white;
   margin-bottom: 0.75rem;
   line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 
 .billDescription {
@@ -35,6 +46,12 @@
   color: #9f9f9f;
   margin-bottom: 1rem;
   line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 
 .billTags {
@@ -42,6 +59,8 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   overflow: hidden;
+  margin-top: auto;
+  flex-shrink: 0;
 }
 
 .categoryTag {

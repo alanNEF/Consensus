@@ -180,7 +180,7 @@ export default function BillCard({ bill, billSummary, billUrl, isExpanded = fals
         if (response.ok) {
           // Refresh status to ensure we have the latest state
           await checkEndorsementStatus();
-        }
+    }
       } catch (error) {
         console.error("Error opposing bill:", error);
       }
@@ -261,7 +261,7 @@ export default function BillCard({ bill, billSummary, billUrl, isExpanded = fals
                       className={`categoryTag ${getCategoryClass(category)}`}
                     >
                       {category}
-                    </span>
+              </span>
                   ))}
                 </div>
               </div>
@@ -288,9 +288,9 @@ export default function BillCard({ bill, billSummary, billUrl, isExpanded = fals
                     <div className="sponsorKeyItem">
                       <div className="sponsorKeyBox thirdParty"></div>
                       <span>Third Party</span>
-                    </div>
-                  </div>
-                </div>
+          </div>
+        </div>
+      </div>
                 <div className="sponsorSection">
                   <div className="sponsorsList">
                     {bill.sponsorDetails.map((sponsor, index) => (
@@ -300,8 +300,8 @@ export default function BillCard({ bill, billSummary, billUrl, isExpanded = fals
                     ))}
                   </div>
                 </div>
-              </div>
-            )}
+        </div>
+      )}
 
             {billUrl && (
               <div>
@@ -312,14 +312,14 @@ export default function BillCard({ bill, billSummary, billUrl, isExpanded = fals
                   Official Bill
                 </h3>
                 <div className="officialBillSection">
-                  <a
+          <a
                     href={billUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+            target="_blank"
+            rel="noopener noreferrer"
                     className="officialLink"
-                  >
-                    View on Congress.gov →
-                  </a>
+          >
+            View on Congress.gov →
+          </a>
                 </div>
               </div>
             )}
@@ -376,8 +376,8 @@ export default function BillCard({ bill, billSummary, billUrl, isExpanded = fals
               >
                 Contact Representatives
               </PrimaryButton>
-            </div>
-          </div>
+      </div>
+    </div>
 
           {isContactGalleryOpen && (
             <ContactCardGallery

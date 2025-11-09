@@ -8,7 +8,7 @@ import "./account.css";
 const topics = [
     { id: "Healthcare", label: "Healthcare", class: "health" },
     { id: "Environmentalism", label: "Environment", class: "environment" },
-    { id: "Armed Forces", label: "Defense", class: "armedServices" },
+    { id: "Armed Services", label: "Armed Services", class: "armedServices" },
     { id: "Economy", label: "Economy", class: "economy" },
     { id: "Education", label: "Education", class: "education" },
     { id: "Technology", label: "Technology", class: "technology" },
