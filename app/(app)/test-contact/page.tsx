@@ -40,30 +40,7 @@ const getRepresentativesByDistrict = (zipCode: string): Representative[] => {
   // Mock representatives for a sample district (CA-12)
   // In production, this would query an API like the Census API or Congress API
   return [
-    {
-      name: "Nancy Pelosi",
-      party: "DEMOCRAT",
-      photo: null,
-      address: "1236 Longworth House Office Building, Washington, DC 20515",
-      phone: "(202) 225-4965",
-      website: "https://pelosi.house.gov",
-    },
-    {
-      name: "Dianne Feinstein",
-      party: "DEMOCRAT",
-      photo: null,
-      address: "331 Hart Senate Office Building, Washington, DC 20510",
-      phone: "(202) 224-3841",
-      website: "https://www.feinstein.senate.gov",
-    },
-    {
-      name: "Alex Padilla",
-      party: "DEMOCRAT",
-      photo: null,
-      address: "112 Hart Senate Office Building, Washington, DC 20510",
-      phone: "(202) 224-3553",
-      website: "https://www.padilla.senate.gov",
-    },
+
   ];
 };
 
@@ -88,8 +65,8 @@ export default function TestContactPage() {
             Representatives are fetched based on user&apos;s congressional district (zip code: {mockUserZipCode})
           </p>
           <div className="testBillCardWrapper">
-            <BillCard 
-              bill={sampleBill} 
+            <BillCard
+              bill={sampleBill}
               billSummary={sampleBillSummary}
               representatives={representatives}
             />

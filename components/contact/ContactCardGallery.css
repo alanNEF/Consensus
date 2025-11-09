@@ -1,19 +1,20 @@
 .contactGalleryOverlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  /* Remove absolute positioning - it will be a flex child */
+  position: relative;
   z-index: 1001;
-  pointer-events: none;
+  pointer-events: all;
   display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 2rem;
+  align-items: stretch;
+  /* Match height of modal */
+  justify-content: flex-start;
+  flex: 0 1 auto;
+  /* Allow shrinking but don't grow beyond content */
+  min-width: 0;
+  /* Allow flex item to shrink below content size */
 }
 
 .contactGalleryOverlay.visible {
-  pointer-events: none;
+  pointer-events: all;
 }
 
 .contactGalleryOverlay.visible .contactGalleryContainer {
@@ -25,8 +26,12 @@
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   width: 100%;
-  max-width: 600px;
+  min-width: 400px;
+  /* Minimum width */
+  max-width: 500px;
+  /* Maximum width */
   max-height: 90vh;
+  /* Match modal max height */
   display: flex;
   flex-direction: column;
   padding: 2rem;
@@ -34,8 +39,9 @@
   position: relative;
   opacity: 0;
   transform: translateX(50px);
-  transition: opacity 0.3s ease, height 0.4s ease;
-  margin-right: 4rem;
+  transition: opacity 0.3s ease, transform 0.3s ease, width 0.3s ease, height 0.4s ease;
+  flex: 0 1 500px;
+  /* Don't grow beyond 500px, but can shrink */
 }
 
 .contactGalleryOverlay.visible .contactGalleryContainer {
@@ -148,11 +154,22 @@
   .contactGalleryOverlay {
     position: relative;
     justify-content: center;
+    width: 100%;
+    max-width: 100%;
   }
 
   .contactGalleryContainer {
     max-width: 100%;
+    min-width: 100%;
+    width: 100%;
     margin-left: 0;
+    margin-right: 0;
   }
 }
 
+@media (max-width: 768px) {
+  .contactGalleryContainer {
+    min-width: 100%;
+    max-width: 100%;
+  }
+}

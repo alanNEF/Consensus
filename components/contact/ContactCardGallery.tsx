@@ -20,18 +20,12 @@ export default function ContactCardGallery({
   const cardWrapperRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (isVisible) {
-      setCurrentIndex(0);
-    }
-  }, [isVisible]);
-
   // Match the height of the bill card modal with animation
   useEffect(() => {
     if (isVisible && containerRef.current) {
-      // Start with height 0
+      // Start with height 0 for animation
       containerRef.current.style.height = '0px';
-      
+
       const updateHeight = () => {
         const billModalContent = document.querySelector('.modalContent') as HTMLElement;
         if (billModalContent && containerRef.current) {
@@ -47,8 +41,8 @@ export default function ContactCardGallery({
 
       // Small delay to ensure bill modal has rendered and 0px height is applied
       const timeoutId = setTimeout(updateHeight, 1);
-      
-      // Update on window resize (without animation)
+
+      // Update on window resize
       const handleResize = () => {
         const billModalContent = document.querySelector('.modalContent') as HTMLElement;
         if (billModalContent && containerRef.current) {
@@ -56,12 +50,29 @@ export default function ContactCardGallery({
           containerRef.current.style.height = `${billModalHeight}px`;
         }
       };
-      
+
+      // Watch for changes in modal content size
+      const billModalContent = document.querySelector('.modalContent') as HTMLElement;
+      let resizeObserver: ResizeObserver | null = null;
+
+      if (billModalContent && window.ResizeObserver) {
+        resizeObserver = new ResizeObserver(() => {
+          if (billModalContent && containerRef.current) {
+            const billModalHeight = billModalContent.offsetHeight;
+            containerRef.current.style.height = `${billModalHeight}px`;
+          }
+        });
+        resizeObserver.observe(billModalContent);
+      }
+
       window.addEventListener('resize', handleResize);
 
       return () => {
         clearTimeout(timeoutId);
         window.removeEventListener('resize', handleResize);
+        if (resizeObserver) {
+          resizeObserver.disconnect();
+        }
       };
     } else if (!isVisible && containerRef.current) {
       // Reset height when gallery is closed
@@ -100,14 +111,14 @@ export default function ContactCardGallery({
 
   const handleClose = () => {
     if (containerRef.current) {
-      // Shrink to 0 height
+      // Shrink to 0 height with animation
       containerRef.current.style.height = '0px';
       // Wait for animation to complete (0.4s) then close
       setTimeout(() => {
         if (onClose) {
           onClose();
         }
-      }, 280);
+      }, 400);
     } else {
       // If no container ref, close immediately
       if (onClose) {
@@ -121,10 +132,12 @@ export default function ContactCardGallery({
   }
 
   return (
-    <div 
+    <div
       className={`contactGalleryOverlay ${isVisible ? "visible" : ""}`}
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
     >
-      <div 
+      <div
         ref={containerRef}
         className="contactGalleryContainer"
         onClick={(e) => e.stopPropagation()}
@@ -138,9 +151,8 @@ export default function ContactCardGallery({
         </div>
         <div className="contactGalleryContent">
           <button
-            className={`contactGalleryArrow contactGalleryArrowLeft ${
-              !canGoPrevious ? "disabled" : ""
-            }`}
+            className={`contactGalleryArrow contactGalleryArrowLeft ${!canGoPrevious ? "disabled" : ""
+              }`}
             onClick={handlePrevious}
             disabled={!canGoPrevious}
             aria-label="Previous representative"
@@ -160,9 +172,8 @@ export default function ContactCardGallery({
             <ContactCard representative={representatives[currentIndex]} />
           </div>
           <button
-            className={`contactGalleryArrow contactGalleryArrowRight ${
-              !canGoNext ? "disabled" : ""
-            }`}
+            className={`contactGalleryArrow contactGalleryArrowRight ${!canGoNext ? "disabled" : ""
+              }`}
             onClick={handleNext}
             disabled={!canGoNext}
             aria-label="Next representative"

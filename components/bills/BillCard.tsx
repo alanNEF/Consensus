@@ -81,14 +81,14 @@ export default function BillCard({ bill, billSummary, isExpanded = false, onCard
     // Only close if clicking directly on the overlay, not on modal content or gallery
     const target = e.target as HTMLElement;
     const currentTarget = e.currentTarget as HTMLElement;
-    
+
     // Check if clicking directly on the overlay background
     if (target === currentTarget) {
       setIsModalOpen(false);
       setIsContactGalleryOpen(false);
       return;
     }
-    
+
     // Also check if clicking on the gallery overlay (but not the container)
     if (target.classList.contains('contactGalleryOverlay')) {
       setIsModalOpen(false);
@@ -217,9 +217,12 @@ export default function BillCard({ bill, billSummary, isExpanded = false, onCard
       </div>
 
       {isModalOpen && (
-        <div className="modalOverlay" onClick={handleCloseModal}>
-          <div 
-            className="modalContent" 
+        <div
+          className={`modalOverlay ${isContactGalleryOpen ? 'hasGallery' : ''}`}
+          onClick={handleCloseModal}
+        >
+          <div
+            className="modalContent"
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
           >
@@ -375,12 +378,14 @@ export default function BillCard({ bill, billSummary, isExpanded = false, onCard
               </PrimaryButton>
             </div>
           </div>
-          
-          <ContactCardGallery
-            representatives={getRepresentatives()}
-            isVisible={isContactGalleryOpen}
-            onClose={handleCloseContactGallery}
-          />
+
+          {isContactGalleryOpen && (
+            <ContactCardGallery
+              representatives={getRepresentatives()}
+              isVisible={isContactGalleryOpen}
+              onClose={handleCloseContactGallery}
+            />
+          )}
         </div>
       )}
     </>
