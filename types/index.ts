@@ -17,6 +17,11 @@ export interface User {
     education?: string | null;
 }
 
+export interface Sponsor {
+    name: string;
+    party: "REPUBLICAN" | "DEMOCRAT" | "THIRD_PARTY";
+}
+
 export interface Bill {
     id: string;
     title: string;
@@ -28,12 +33,18 @@ export interface Bill {
     sponsors: string[] | null;
     created_at: string;
     updated_at: string;
+    // Extended fields for UI
+    categories?: string[];
+    bill_text: string;
+    affectedGroups?: string[];
+    sponsorDetails?: Sponsor[];
 }
 
 export interface BillSummary {
     id: string;
     bill_id: string;
     summary_text: string;
+    one_liner: string;
     created_at: string;
 }
 
@@ -41,6 +52,7 @@ export interface Endorsement {
     id: string;
     user_id: string;
     bill_id: string;
+    endorsed: boolean;
     created_at: string;
 }
 
@@ -49,10 +61,6 @@ export interface SavedBill {
     user_id: string;
     bill_id: string;
     created_at: string;
-}
-
-export interface BillWithSummary extends Bill {
-    summary?: BillSummary;
 }
 
 export interface PaginatedResponse<T> {
