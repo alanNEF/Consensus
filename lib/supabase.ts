@@ -242,6 +242,41 @@ export async function userEndorseBill(userId: string, billId: string): Promise<v
     .upsert({ user_id: userId, bill_id: billId, endorsed: true } as any, { onConflict: "user_id,bill_id" } as any);
 }
 
+export async function getUserEndorsements(userId: string): Promise<SavedBill[]> {
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("saved_bills")
+    .select("*")
+    .eq("user_id", userId).eq("endorsed", true);
+
+  if (error) {
+    console.error("Error fetching user endorsements:", error);
+    return [];
+  }
+
+  return (data || []) as SavedBill[];
+}
+
+export async function getUserOppositions(userId: string): Promise<SavedBill[]> {
+  if (!supabase) {
+    return [];
+  }
+  const { data, error } = await supabase
+    .from("saved_bills")
+    .select("*")
+    .eq("user_id", userId).eq("endorsed", false);
+
+  if (error) {
+    console.error("Error fetching user oppositions:", error);
+    return [];
+  }
+
+  return (data || []) as SavedBill[];
+}
+
 //Inserts the bill as opposed by the user, if they are endorsing it it will change to opposed
 export async function userOpposeBill(userId: string, billId: string): Promise<void> {
   if (!supabase) {

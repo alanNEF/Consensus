@@ -9,6 +9,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "db:apply": "psql $DATABASE_URL -f db/schema.sql",
+    "db:migrate": "psql $DATABASE_URL -f db/migration_add_categories.sql",
+    "db:seed": "psql $DATABASE_URL -f db/seed.sql"
     "db:seed": "psql $DATABASE_URL -f db/seed.sql",
     "summarize:bill": "tsx --env-file=.env scripts/summarize-all-bills.ts",
     "summarize:all": "tsx --env-file=.env scripts/summarize-all-bills.ts --all"
