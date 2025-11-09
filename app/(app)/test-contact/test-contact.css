@@ -1,0 +1,84 @@
+.testContactContainer {
+  min-height: 100vh;
+  background-color: #1a1a1a;
+  color: white;
+  padding: 2rem;
+}
+
+.testContactHeader {
+  max-width: 1200px;
+  margin: 0 auto 3rem;
+  text-align: center;
+}
+
+.testContactTitle {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 1rem;
+}
+
+.testContactDescription {
+  font-size: 1.1rem;
+  color: #9f9f9f;
+  line-height: 1.6;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.testContactContent {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+}
+
+.testContactSection {
+  background-color: #262626;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 2rem;
+}
+
+.testSectionTitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 1.5rem;
+}
+
+.testContactButton {
+  background-color: #0474b6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  width: 100%;
+}
+
+.testContactButton:hover {
+  background-color: #0365a0;
+}
+
+.testBillCardWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+@media (max-width: 768px) {
+  .testContactContent {
+    grid-template-columns: 1fr;
+  }
+
+  .testContactTitle {
+    font-size: 2rem;
+  }
+}
+

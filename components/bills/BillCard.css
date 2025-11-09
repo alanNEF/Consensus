@@ -140,6 +140,8 @@
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
+  z-index: 1002;
+  flex-shrink: 0;
 }
 
 .modalClose {
@@ -361,5 +363,20 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+@media (max-width: 1200px) {
+  .modalOverlay {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 1rem;
+    overflow-y: auto;
+  }
+
+  .modalContent {
+    max-width: 100%;
+    margin-bottom: 1rem;
+  }
 }
 
