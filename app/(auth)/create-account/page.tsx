@@ -7,19 +7,19 @@ import Link from "next/link";
 import "./create-account.css";
 
 const topics = [
-    { id: "healthcare", label: "Healthcare", class: "health" },
-    { id: "environmentalism", label: "Environmentalism", class: "environment" },
-    { id: "armedForces", label: "Armed Forces", class: "armedServices" },
-    { id: "economy", label: "Economy", class: "economy" },
-    { id: "education", label: "Education", class: "education" },
-    { id: "technology", label: "Technology", class: "technology" },
-    { id: "immigration", label: "Immigration", class: "immigration" },
-    { id: "agriculturalAndFood", label: "Agricultural and Food", class: "agriculture" },
-    { id: "governmentOperations", label: "Government Operations", class: "government" },
-    { id: "taxation", label: "Taxation", class: "taxation" },
-    { id: "civilRights", label: "Civil Rights", class: "civilRights" },
-    { id: "criminalJustice", label: "Criminal Justice", class: "criminalJustice" },
-    { id: "foreignPolicy", label: "Foreign Policy", class: "foreignPolicy" },
+    { id: "Healthcare", label: "Healthcare", class: "health" },
+    { id: "Environmentalism", label: "Environmentalism", class: "environment" },
+    { id: "Armed Services", label: "Armed Forces", class: "armedServices" },
+    { id: "Economy", label: "Economy", class: "economy" },
+    { id: "Education", label: "Education", class: "education" },
+    { id: "Technology", label: "Technology", class: "technology" },
+    { id: "Immigration", label: "Immigration", class: "immigration" },
+    { id: "Agriculture + Food", label: "Agricultural and Food", class: "agriculture" },
+    { id: "Government Operations", label: "Government Operations", class: "government" },
+    { id: "Taxation", label: "Taxation", class: "taxation" },
+    { id: "Civil Rights", label: "Civil Rights", class: "civilRights" },
+    { id: "Criminal Justice", label: "Criminal Justice", class: "criminalJustice" },
+    { id: "Foreign Policy", label: "Foreign Policy", class: "foreignPolicy" },
 ];
 
 export default function CreateAccountPage() {

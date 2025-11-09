@@ -6,18 +6,19 @@ import { useRouter } from "next/navigation";
 import "./account.css";
 
 const topics = [
-    { id: "healthcare", label: "Healthcare", class: "health", category: "Health" },
-    { id: "environmentalism", label: "Environment", class: "environment", category: "Environment" },
-    { id: "armedForces", label: "Defense", class: "armedServices", category: "Armed Services" },
-    { id: "economy", label: "Economy", class: "economy", category: "Economy" },
-    { id: "education", label: "Education", class: "education", category: "Education" },
-    { id: "technology", label: "Technology", class: "technology", category: "Technology" },
-    { id: "immigration", label: "Immigration", class: "immigration", category: "Immigration" },
-    { id: "agriculturalAndFood", label: "Agriculture", class: "agriculture", category: "Agriculture and Food" },
-    { id: "governmentOperations", label: "Gov. Operations", class: "government", category: "Government Operations" },
-    { id: "taxation", label: "Taxation", class: "taxation", category: "Taxation" },
-    { id: "civilRights", label: "Civil Rights", class: "civilRights", category: "Civil Rights" },
-    { id: "criminalJustice", label: "Criminal Justice", class: "criminalJustice", category: "Criminal Justice" },
+    { id: "Healthcare", label: "Healthcare", class: "health" },
+    { id: "Environmentalism", label: "Environment", class: "environment" },
+    { id: "Armed Forces", label: "Defense", class: "armedServices" },
+    { id: "Economy", label: "Economy", class: "economy" },
+    { id: "Education", label: "Education", class: "education" },
+    { id: "Technology", label: "Technology", class: "technology" },
+    { id: "Immigration", label: "Immigration", class: "immigration" },
+    { id: "Agriculture + Food", label: "Agriculture", class: "agriculture" },
+    { id: "Government Operations", label: "Gov. Operations", class: "government" },
+    { id: "Taxation", label: "Taxation", class: "taxation" },
+    { id: "Civil Rights", label: "Civil Rights", class: "civilRights" },
+    { id: "Criminal Justice", label: "Criminal Justice", class: "criminalJustice" },
+    { id: "Foreign Policy", label: "Foreign Policy", class: "foreignPolicy" },
 ];
 
 export default function AccountPage() {
@@ -58,7 +59,38 @@ export default function AccountPage() {
             const data = await response.json();
             setEmail(data.email || "");
             setZipcode(data.residency || "");
-            setSelectedTopics(data.topics || []);
+
+            // Normalize topics: map database values (which might be lowercase/wrong case) 
+            // to the correct topic IDs defined in our topics array
+            const normalizeTopics = (dbTopics: string[]): string[] => {
+                return dbTopics
+                    .map(dbTopic => {
+                        // First try exact match
+                        const exactMatch = topics.find(t => t.id === dbTopic);
+                        if (exactMatch) return exactMatch.id;
+
+                        // Then try case-insensitive match
+                        const caseInsensitiveMatch = topics.find(
+                            t => t.id.toLowerCase() === dbTopic.toLowerCase()
+                        );
+                        if (caseInsensitiveMatch) return caseInsensitiveMatch.id;
+
+                        // Handle special case variations (like "Armed Forces" vs "Armed Services")
+                        if (dbTopic.toLowerCase().includes("armed")) {
+                            const armedMatch = topics.find(
+                                t => t.id.toLowerCase().includes("armed")
+                            );
+                            if (armedMatch) return armedMatch.id;
+                        }
+
+                        // If no match found, return original (shouldn't happen, but safe fallback)
+                        return dbTopic;
+                    })
+                    .filter((topic, index, self) => self.indexOf(topic) === index); // Remove duplicates
+            };
+
+            setSelectedTopics(normalizeTopics(data.topics || []));
+
             setRace(data.race || "");
             setReligion(data.religion || "");
             setGender(data.gender || "");
@@ -75,17 +107,42 @@ export default function AccountPage() {
     };
 
     const toggleTopic = (topicId: string) => {
-        setSelectedTopics((prev) =>
-            prev.includes(topicId)
-                ? prev.filter((id) => id !== topicId)
-                : [...prev, topicId]
-        );
+        console.log("toggleTopic called with:", topicId);
+        console.log("Current selectedTopics before toggle:", selectedTopics);
+        setSelectedTopics((prev) => {
+            // Normalize the previous array first to handle any inconsistencies
+            const normalizedPrev = prev.map(dbTopic => {
+                const match = topics.find(
+                    t => t.id.toLowerCase() === dbTopic.toLowerCase()
+                );
+                return match ? match.id : dbTopic;
+            });
+
+            // Remove duplicates
+            const uniquePrev = Array.from(new Set(normalizedPrev));
+
+            // Now check if the topic is already selected (case-insensitive)
+            const isAlreadySelected = uniquePrev.some(
+                id => id.toLowerCase() === topicId.toLowerCase()
+            );
+
+            const newTopics = isAlreadySelected
+                ? uniquePrev.filter((id) => id.toLowerCase() !== topicId.toLowerCase())
+                : [...uniquePrev, topicId];
+
+            console.log("New selectedTopics after toggle:", newTopics);
+            return newTopics;
+        });
     };
 
     const handleSave = async () => {
         setIsSaving(true);
         setError("");
         setSuccess("");
+
+        // DEBUG: Log what we're about to send
+        console.log("Topics being sent:", selectedTopics);
+        console.log("Selected topics array:", JSON.stringify(selectedTopics));
 
         try {
             const response = await fetch('/api/user/profile', {
@@ -108,6 +165,11 @@ export default function AccountPage() {
                 const data = await response.json();
                 throw new Error(data.error || 'Failed to update profile');
             }
+
+            const responseData = await response.json();
+            // DEBUG: Log what we got back
+            console.log("Topics received from server:", responseData.topics);
+            console.log("Response data:", JSON.stringify(responseData.topics));
 
             setSuccess("Profile updated successfully!");
             setTimeout(() => setSuccess(""), 3000);
@@ -187,14 +249,17 @@ export default function AccountPage() {
                                     <button
                                         key={topic.id}
                                         type="button"
-                                        onClick={() => toggleTopic(topic.id)}
+                                        onClick={() => {
+                                            toggleTopic(topic.id);
+                                            console.log("toggleTopic called with:", topic.id);
+                                        }}
                                         className={`topicTag ${topic.class} ${isSelected ? "selected" : ""}`}
                                     >
                                         <span>{topic.label}</span>
                                         {isSelected && (
                                             <span className="topicCheckmark">
                                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                    <path d="M13.3333 4L6 11.3333L2.66667 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                    <path d="M13.3333 4L6 11.3333L2.66667 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                                 </svg>
                                             </span>
                                         )}
