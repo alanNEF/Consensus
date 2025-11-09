@@ -36,11 +36,11 @@ async function getBillTextForSearch(bill: Bill): Promise<string> {
   if (summary?.summary_text) {
     return `${bill.title}\n${summary.summary_text}`;
   }
-  
+
   if (bill.bill_text) {
     return `${bill.title}\n${bill.bill_text}`;
   }
-  
+
   return `${bill.title} ${bill.summary_key || ""}`;
 }
 
@@ -57,7 +57,7 @@ async function getVectorStore(billId: string): Promise<MemoryVectorStore> {
 
   try {
     console.log(`Creating new vector store for bill ${billId}...`);
-    
+
     // Get bill from database
     const bill = await getBillById(billId);
     if (!bill) {
@@ -111,12 +111,12 @@ async function getContextSimpleSearch(billId: string, message: string): Promise<
     let documentChunks = documentChunksCache.get(billId);
     if (!documentChunks) {
       const text = await getBillTextForSearch(bill);
-      
+
       const splitter = new RecursiveCharacterTextSplitter({
         chunkSize: 1000,
         chunkOverlap: 200,
       });
-      
+
       const docs = [new Document({ pageContent: text })];
       const splitDocs = await splitter.splitDocuments(docs);
       documentChunks = splitDocs.map((doc) => doc.pageContent);
@@ -177,7 +177,7 @@ async function getContextSimpleSearch(billId: string, message: string): Promise<
 export async function getContext(billId: string, message: string): Promise<string> {
   try {
     console.log(`Retrieving RAG context for bill ${billId} with message: ${message.substring(0, 50)}`);
-    
+
     // Try to use vector store if embeddings are available
     if (embeddings && openRouterApiKey) {
       try {
@@ -186,7 +186,7 @@ export async function getContext(billId: string, message: string): Promise<strin
         console.log("Vector store retrieved, creating retriever...");
         const retriever = vectorStore.asRetriever({ k: 3 }); // Limit to top 3 results
         console.log("Retrieving relevant documents...");
-        const context = await retriever.getRelevantDocuments(message);
+        const context = await retriever.invoke(message);
         console.log(`Retrieved ${context.length} documents`);
 
         return context.map((doc) => doc.pageContent).join("\n");

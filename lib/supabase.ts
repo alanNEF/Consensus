@@ -1,11 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
-import type { Bill, BillSummary, Endorsement, SavedBill, User } from "@/types";
-import { CongressBill } from "./congress/clients";
+import type { Bill, BillSummary, SavedBill, User } from "@/types";
 import { config } from "dotenv";
 import path from "path";
 
 config({ path: path.join(process.cwd(), ".env") });
-import { generateBillSummaryOpenRouter } from "./ai/openrouter";
 import type { Database } from "./database.types";
 
 // Placeholder for database types
@@ -240,6 +238,10 @@ export async function userEndorseBill(userId: string, billId: string): Promise<v
   const { error } = await supabase
     .from("saved_bills")
     .upsert({ user_id: userId, bill_id: billId, endorsed: true } as any, { onConflict: "user_id,bill_id" } as any);
+  if (error) {
+    console.error("Error endorsing bill:", error);
+    throw new Error("Failed to endorse bill");
+  }
 }
 
 export async function getUserEndorsements(userId: string): Promise<SavedBill[]> {
@@ -304,6 +306,10 @@ export async function userOpposeBill(userId: string, billId: string): Promise<vo
   const { error } = await supabase
     .from("saved_bills")
     .upsert({ user_id: userId, bill_id: billId, endorsed: false } as any, { onConflict: "user_id,bill_id" } as any);
+  if (error) {
+    console.error("Error opposing bill:", error);
+    throw new Error("Failed to oppose bill");
+  }
 }
 
 //Removes the user's support/opposition for the bill
@@ -315,6 +321,10 @@ export async function userRemoveBillOpinion(userId: string, billId: string): Pro
   const { error } = await supabase
     .from("saved_bills")
     .delete().eq("user_id", userId).eq("bill_id", billId);
+  if (error) {
+    console.error("Error removing bill opinion:", error);
+    throw new Error("Failed to remove bill opinion");
+  }
 }
 
 /**

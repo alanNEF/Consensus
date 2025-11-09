@@ -8,10 +8,10 @@ export const ComposerAddAttachment: FC = () => {
 };
 
 export const ComposerAttachments: FC = () => {
-  return <ComposerPrimitive.Attachments />;
+  return <ComposerPrimitive.Attachments components={{}} />;
 };
 
 export const UserMessageAttachments: FC = () => {
-  return <MessagePrimitive.Attachments />;
+  return <MessagePrimitive.Attachments components={{}} />;
 };
 

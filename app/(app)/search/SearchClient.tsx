@@ -43,7 +43,8 @@ function assembleLink(bill: Bill): string {
     }
 
     return "https://www.congress.gov/";
-  } catch (error) {
+  } catch (error: unknown) {
+    console.error("Error assembling link:", error);
     return "https://www.congress.gov/";
   }
 }
@@ -70,7 +71,7 @@ export default function SearchClient({ query }: SearchClientProps) {
       try {
         // Call the search API
         const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-        
+
         if (!response.ok) {
           throw new Error("Failed to perform search");
         }
@@ -87,7 +88,7 @@ export default function SearchClient({ query }: SearchClientProps) {
             }
             const bill = await billResponse.json();
             return bill;
-          } catch (err) {
+          } catch (err: unknown) {
             console.error(`Error fetching bill ${result.id}:`, err);
             return null;
           }
@@ -104,55 +105,52 @@ export default function SearchClient({ query }: SearchClientProps) {
         const urlMap = new Map<string, string>();
 
         for (const bill of fetchedBills) {
+          // Fetch summary (GET to retrieve existing, or generate if needed)
           try {
-            // Fetch summary (GET to retrieve existing, or generate if needed)
+            const summaryResponse = await fetch(`/api/bills/${bill.id}/summary`);
+            if (summaryResponse.ok) {
+              const summary = await summaryResponse.json();
+              if (summary && summary.summary_text) {
+                summaryMap.set(bill.id, summary);
+              }
+            }
+          } catch (error: unknown) {
+            console.error(`Error fetching summary for bill ${bill.id}:`, error);
+            // If GET fails, try POST to generate
             try {
-              const summaryResponse = await fetch(`/api/bills/${bill.id}/summary`);
+              const summaryResponse = await fetch(`/api/bills/${bill.id}/summary`, {
+                method: "POST",
+              });
               if (summaryResponse.ok) {
-                const summary = await summaryResponse.json();
-                if (summary && summary.summary_text) {
-                  summaryMap.set(bill.id, summary);
+                const summaryData = await summaryResponse.json();
+                if (summaryData.summary) {
+                  summaryMap.set(bill.id, {
+                    id: "",
+                    bill_id: bill.id,
+                    summary_text: summaryData.summary,
+                    one_liner: summaryData.summary.split(".")[0] + ".",
+                    created_at: "",
+                  });
                 }
               }
-            } catch (summaryErr) {
-              // If GET fails, try POST to generate
-              try {
-                const summaryResponse = await fetch(`/api/bills/${bill.id}/summary`, {
-                  method: "POST",
-                });
-                if (summaryResponse.ok) {
-                  const summaryData = await summaryResponse.json();
-                  if (summaryData.summary) {
-                    summaryMap.set(bill.id, {
-                      id: "",
-                      bill_id: bill.id,
-                      summary_text: summaryData.summary,
-                      one_liner: summaryData.summary.split(".")[0] + ".",
-                      created_at: "",
-                    });
-                  }
-                }
-              } catch (postErr) {
-                // Summary fetch failed, continue without it
-                console.error(`Error fetching summary for bill ${bill.id}:`, postErr);
-              }
+            } catch (error: unknown) {
+              console.error(`Error fetching summary for bill ${bill.id}:`, error);
+              // Summary fetch failed, continue without it
             }
+          }
 
-            // Assemble URL
-            const url = assembleLink(bill);
-            if (url) {
-              urlMap.set(bill.id, url);
-            }
-          } catch (err) {
-            console.error(`Error fetching details for bill ${bill.id}:`, err);
+          // Assemble URL
+          const url = assembleLink(bill);
+          if (url) {
+            urlMap.set(bill.id, url);
           }
         }
 
         setBillSummaries(summaryMap);
         setBillUrls(urlMap);
-      } catch (err: any) {
-        console.error("Search error:", err);
-        setError(err.message || "An error occurred while searching");
+      } catch (error: unknown) {
+        console.error("Search error:", error);
+        setError(error instanceof Error ? error.message : "An error occurred while searching");
       } finally {
         setLoading(false);
       }

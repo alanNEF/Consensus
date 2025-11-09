@@ -1,27 +1,9 @@
 import { NextAuthOptions } from "next-auth";
-import EmailProvider from "next-auth/providers/email";
 import CredentialsProvider from "next-auth/providers/credentials";
-import type { Adapter } from "next-auth/adapters";
 import { supabase } from "./supabase";
 import { verifyPassword } from "./password";
 
-// TODO: If using Supabase adapter, install @next-auth/supabase-adapter
-// import { SupabaseAdapter } from "@next-auth/supabase-adapter";
-// import { supabase } from "./supabase";
-
-// TODO: If using Prisma, install @prisma/client and @next-auth/prisma-adapter
-// import { PrismaAdapter } from "@next-auth/prisma-adapter";
-
-// For now, we'll use JWT sessions without an adapter
-// In production, use SupabaseAdapter or PrismaAdapter with a database
-
 export const authOptions: NextAuthOptions = {
-  // TODO: Uncomment and configure Supabase adapter when ready:
-  // adapter: SupabaseAdapter({
-  //   url: process.env.SUPABASE_URL!,
-  //   secret: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  // }) as Adapter,
-
   providers: [
     // Credentials provider for email/password authentication
     CredentialsProvider({

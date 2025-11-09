@@ -98,7 +98,7 @@ export default function AccountPage() {
             setParty(data.party || "");
             setIncome(data.income || "");
             setEducation(data.education || "");
-        } catch (err: any) {
+        } catch (err: unknown) {
             setError("Failed to load user data");
             console.error(err);
         } finally {
@@ -173,8 +173,10 @@ export default function AccountPage() {
 
             setSuccess("Profile updated successfully!");
             setTimeout(() => setSuccess(""), 3000);
-        } catch (err: any) {
-            setError(err.message || "Failed to update profile");
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : "Failed to update profile";
+            setError(errorMessage);
+            console.error(err);
         } finally {
             setIsSaving(false);
         }
@@ -314,7 +316,7 @@ export default function AccountPage() {
                                     <option value="hinduism">Hinduism</option>
                                     <option value="buddhism">Buddhism</option>
                                     <option value="sikhism">Sikhism</option>
-                                    <option value="bahai">Bahá'í</option>
+                                    <option value="bahai">Bahá&apos;í</option>
                                     <option value="jainism">Jainism</option>
                                     <option value="shinto">Shinto</option>
                                     <option value="taoism">Taoism</option>
@@ -391,9 +393,9 @@ export default function AccountPage() {
                                     <option value="">Select education level</option>
                                     <option value="high-school">High School</option>
                                     <option value="some-college">Some College</option>
-                                    <option value="associates">Associate's Degree</option>
-                                    <option value="bachelors">Bachelor's Degree</option>
-                                    <option value="masters">Master's Degree</option>
+                                    <option value="associates">Associate&apos;s Degree</option>
+                                    <option value="bachelors">Bachelor&apos;s Degree</option>
+                                    <option value="masters">Master&apos;s Degree</option>
                                     <option value="doctoral">Doctoral Degree</option>
                                     <option value="professional">Professional Degree</option>
                                     <option value="prefer-not-to-say">Prefer not to say</option>

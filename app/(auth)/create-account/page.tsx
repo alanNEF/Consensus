@@ -29,7 +29,6 @@ export default function CreateAccountPage() {
     // Step 1 fields
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
-    const [organisation, setOrganisation] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
@@ -80,8 +79,10 @@ export default function CreateAccountPage() {
             // Move to step 2
             setCurrentStep(2);
             setIsLoading(false);
-        } catch (err) {
-            setError("An error occurred. Please try again.");
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : "An error occurred. Please try again.";
+            setError(errorMessage);
+            console.error(err);
             setIsLoading(false);
         }
     };
@@ -104,7 +105,9 @@ export default function CreateAccountPage() {
             setCurrentStep(3);
             setIsLoading(false);
         } catch (err) {
-            setError("An error occurred. Please try again.");
+            const errorMessage = err instanceof Error ? err.message : "An error occurred. Please try again.";
+            setError(errorMessage);
+            console.error(err);
             setIsLoading(false);
         }
     };
@@ -154,8 +157,10 @@ export default function CreateAccountPage() {
                 // Account created but sign-in failed - redirect to login
                 router.push('/login?registered=true');
             }
-        } catch (err: any) {
-            setError(err.message || "An error occurred. Please try again.");
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : "An error occurred. Please try again.";
+            setError(errorMessage);
+            console.error(err);
             setIsLoading(false);
         }
     };
@@ -348,7 +353,7 @@ export default function CreateAccountPage() {
                                     Create your account
                                 </h1>
                                 <p className="formSubtitle">
-                                    Next, let's connect you with your local representatives.
+                                    Next, let&apos;s connect you with your local representatives.
                                 </p>
                             </div>
 
@@ -507,7 +512,7 @@ export default function CreateAccountPage() {
                                             <option value="hinduism">Hinduism</option>
                                             <option value="buddhism">Buddhism</option>
                                             <option value="sikhism">Sikhism</option>
-                                            <option value="bahai">Bahá'í</option>
+                                            <option value="bahai">Bahá&apos;í</option>
                                             <option value="jainism">Jainism</option>
                                             <option value="shinto">Shinto</option>
                                             <option value="taoism">Taoism</option>
@@ -596,9 +601,9 @@ export default function CreateAccountPage() {
                                             <option value="">Select education level</option>
                                             <option value="high-school">High School</option>
                                             <option value="some-college">Some College</option>
-                                            <option value="associates">Associate's Degree</option>
-                                            <option value="bachelors">Bachelor's Degree</option>
-                                            <option value="masters">Master's Degree</option>
+                                            <option value="associates">Associate&apos;s Degree</option>
+                                            <option value="bachelors">Bachelor&apos;s Degree</option>
+                                            <option value="masters">Master&apos;s Degree</option>
                                             <option value="doctoral">Doctoral Degree</option>
                                             <option value="professional">Professional Degree</option>
                                             <option value="prefer-not-to-say">Prefer not to say</option>
