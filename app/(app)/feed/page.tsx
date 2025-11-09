@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { getUserById, getBillsByCategory, getBillSummary } from "@/lib/supabase";
+import { getUserById, getBillsByCategory, getBillSummary, assembleLink } from "@/lib/supabase";
 import FeedClient from "./FeedClient";
 import { Bill, BillSummary } from "@/types";
 import { getUserResidency } from "@/lib/supabase";
@@ -62,11 +62,16 @@ export default async function FeedPage() {
   }
 
   const billSummaries = new Map<string, BillSummary>();
+  const billUrls = new Map<string, string>();
   for (const [, bills] of billsByCategoryPreferred.entries()) {
     for (const bill of bills) {
       const sum = await getBillSummary(bill.id || "");
+      const url = await assembleLink(bill);
       if (sum) {
         billSummaries.set(bill.id, sum as BillSummary);
+      }
+      if (url) {
+        billUrls.set(bill.id, url);
       }
     }
   }
@@ -74,8 +79,12 @@ export default async function FeedPage() {
   for (const [, bills] of billsByCategoryRemaining.entries()) {
     for (const bill of bills) {
       const sum = await getBillSummary(bill.id || "");
+      const url = await assembleLink(bill);
       if (sum) {
         billSummaries.set(bill.id, sum as BillSummary);
+      }
+      if (url) {
+        billUrls.set(bill.id, url);
       }
     }
   }
@@ -118,6 +127,7 @@ export default async function FeedPage() {
       billsByCategoryRemaining={billsByCategoryRemaining}
       billSummaries={billSummaries}
       representatives={representatives}
+      billUrls={billUrls}
     />
   );
 }

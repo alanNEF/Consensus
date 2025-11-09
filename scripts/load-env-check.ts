@@ -7,6 +7,9 @@ import { config } from "dotenv";
 import path from "path";
 config({ path: path.join(process.cwd(), ".env") });
 
+// Load .env file
+import "dotenv/config";
+
 const requiredEnvVars = {
   // Next.js
   NEXT_PUBLIC_SITE_URL: "Next.js public site URL",

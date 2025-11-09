@@ -12,6 +12,7 @@ interface FeedClientProps {
     billsByCategoryRemaining: Map<string, Bill[]>;
     billSummaries: Map<string, BillSummary>;
     representatives: Representative[];
+    billUrls: Map<string, string>;
 }
 
 export default function FeedClient({
@@ -21,6 +22,7 @@ export default function FeedClient({
     billsByCategoryRemaining,
     billSummaries,
     representatives,
+    billUrls
 }: FeedClientProps) {
     const allCategories = [...preferredCategories, ...remainingCategories];
     const [expandedCardIndex, setExpandedCardIndex] = useState<Record<string, number>>({});
@@ -185,6 +187,7 @@ export default function FeedClient({
                                                 isExpanded={expandedIndex === index}
                                                 billSummary={billSummaries.get(bill.id) as BillSummary}
                                                 representatives={representatives}
+                                                billUrl={billUrls.get(bill.id) as string}
                                             />
                                         </div>
                                     ))}
@@ -242,6 +245,7 @@ export default function FeedClient({
                                             <BillCard
                                                 bill={bill}
                                                 billSummary={billSummaries.get(bill.id) as BillSummary}
+                                                billUrl={billUrls.get(bill.id) as string}
                                                 isExpanded={expandedIndex === index}
                                             />
                                         </div>

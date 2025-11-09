@@ -1,8 +1,19 @@
 # Alternative to Poetry - use this if you prefer pip/venv
-supabase>=2.0.0
-psycopg[binary]>=3.1.0
-pgvector>=0.2.0
-openai>=1.0.0
-python-dotenv>=1.0.0
-numpy>=1.24.0
+
+# Core dependencies
+python-dotenv>=1.0.0  # Environment variable management
+numpy>=1.24.0  # Numerical operations (used for softmax, embeddings)
+
+# Database connections
+supabase>=2.0.0  # Supabase client for SQL database (bill metadata, categories)
+psycopg[binary]>=3.1.0  # PostgreSQL adapter (for Supabase)
+pgvector>=0.2.0  # pgvector extension (optional, for Supabase vector support)
+
+# Vector database
+pymilvus>=2.3.0  # Milvus client for vector similarity search
+
+# Machine Learning / NLP
+torch==2.9.0  # PyTorch (required by transformers and sentence-transformers)
+transformers==4.57.1  # Hugging Face transformers (for zero-shot classification)
+sentence-transformers>=2.2.0  # Sentence embeddings (for bill text embeddings)
 

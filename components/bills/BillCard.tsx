@@ -9,6 +9,7 @@ import "./BillCard.css";
 interface BillCardProps {
   bill: Bill;
   billSummary: BillSummary;
+  billUrl: string;
   isExpanded?: boolean;
   onCardClick?: (bill: Bill) => void;
   representatives?: Representative[];
@@ -34,7 +35,7 @@ const categoryColors: Record<string, string> = {
   "Foreign Policy": "foreignPolicy", // Add this
 };
 
-export default function BillCard({ bill, billSummary, isExpanded = false, onCardClick, representatives }: BillCardProps) {
+export default function BillCard({ bill, billSummary, billUrl, isExpanded = false, onCardClick, representatives }: BillCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isContactGalleryOpen, setIsContactGalleryOpen] = useState(false);
   const [isEndorsed, setIsEndorsed] = useState(false);
@@ -297,7 +298,7 @@ export default function BillCard({ bill, billSummary, isExpanded = false, onCard
               </div>
             )}
 
-            {bill.url && (
+            {billUrl && (
               <div>
                 <h3 className="modalSubheader">
                   <svg className="modalSubheaderIcon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -307,7 +308,7 @@ export default function BillCard({ bill, billSummary, isExpanded = false, onCard
                 </h3>
                 <div className="officialBillSection">
                   <a
-                    href={bill.url}
+                    href={billUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="officialLink"
