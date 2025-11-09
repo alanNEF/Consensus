@@ -49,12 +49,12 @@ export default function LoginPage() {
       if (result?.ok) {
         router.push('/feed');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error logging in:", err);
       setError("An error occurred. Please try again.");
       setIsLoading(false);
     }
-};
+  };
 
   return (
     <div className="loginContainer">
