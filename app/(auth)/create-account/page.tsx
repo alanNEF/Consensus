@@ -104,7 +104,7 @@ export default function CreateAccountPage() {
             // Move to step 3
             setCurrentStep(3);
             setIsLoading(false);
-        } catch (err) {
+        } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : "An error occurred. Please try again.";
             setError(errorMessage);
             console.error(err);
