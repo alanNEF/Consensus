@@ -279,9 +279,13 @@ def setup_milvus_collection(verbose: bool = True):
         # Create index for vector field
         index_params = {
             "metric_type": "L2",  # L2 distance for similarity search
-            "index_type": "IVF_FLAT",
-            "params": {"nlist": 128}
+            "index_type": "HNSW",
+            "params": {
+                "M": 16,
+                "efConstruction": 200
+            }
         }
+        
         collection.create_index(
             field_name="embedding",
             index_params=index_params

@@ -78,7 +78,7 @@ def search_bills(query: str, top_k: int = 10, metric: str = "L2") -> List[Dict[s
         # Perform vector similarity search
         search_params = {
             "metric_type": search_metric,
-            "params": {"nprobe": 10}
+            "params": {"ef": 100}
         }
         
         results = collection.search(
