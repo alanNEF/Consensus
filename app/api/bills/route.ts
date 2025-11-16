@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { getBills } from "@/lib/supabase";
 import { paginationSchema } from "@/lib/validators";
 
+// Mark as dynamic to prevent static generation during build
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);

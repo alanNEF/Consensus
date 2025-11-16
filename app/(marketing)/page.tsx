@@ -72,11 +72,11 @@ export default function LandingPage() {
           </div>
           <div className="problemText">
             <h2 className="sectionTitle">
-              Know your representatives? <span className="textAccent">Most don't.</span>
+              Know your representatives? <span className="textAccent">Most don&apos;t.</span>
             </h2>
             <p className="sectionDescription">
-              Congress approval hovers around 30%. This disconnect often comes from a lack of transparency. 
-              Americans want a window into democracy, and that's exactly what Consensi provides.
+              Congress approval hovers around 30%. This disconnect often comes from a lack of transparency.
+              Americans want a window into democracy, and that&apos;s exactly what Consensi provides.
             </p>
           </div>
         </div>
