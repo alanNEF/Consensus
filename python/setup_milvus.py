@@ -17,7 +17,7 @@ load_dotenv()
 
 # Import setup function from ingest.py
 sys.path.insert(0, str(python_dir / "src"))
-from ingest import setup_milvus_collection, clear_milvus_database, get_milvus_connection, MILVUS_COLLECTION_NAME
+from vectors import setup_milvus_collection, clear_milvus_database, get_milvus_connection, MILVUS_COLLECTION_NAME
 
 def main():
     """Main setup function"""

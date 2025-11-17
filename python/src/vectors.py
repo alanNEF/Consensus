@@ -580,8 +580,23 @@ def ingest_bills(force_recreate: bool = False) -> bool:
     return successful > 0
 
 
+# Add at module level (after imports)
+_cached_collection = None
+
 def get_milvus_collection():
-    """Get Milvus collection for bill embeddings (does not create if it doesn't exist)"""
+    """Get Milvus collection for bill embeddings (cached, only loads once)"""
+    global _cached_collection
+    
+    # Return cached collection if already loaded
+    if _cached_collection is not None:
+        try:
+            # Verify collection is still valid
+            _cached_collection.num_entities
+            return _cached_collection
+        except Exception:
+            # Collection was dropped or invalid, reset cache
+            _cached_collection = None
+    
     try:
         from pymilvus import Collection, utility
         
@@ -595,9 +610,19 @@ def get_milvus_collection():
             print(f"    Run setup_milvus.py or ingest.py to create the collection")
             return None
         
-        # Get and load collection
+        # Get collection
         collection = Collection(MILVUS_COLLECTION_NAME)
-        collection.load()
+        
+        # Only load if not already loaded
+        try:
+            # Check if already loaded
+            collection.num_entities  # This will fail if not loaded
+        except Exception:
+            # Not loaded, load it now
+            collection.load()
+        
+        # Cache the collection
+        _cached_collection = collection
         return collection
     except Exception as e:
         print(f"  [ERROR] Failed to get Milvus collection: {e}")
