@@ -106,7 +106,8 @@ def get_embedding_model():
     if _embedding_model is None:
         from sentence_transformers import SentenceTransformer
         
-        model_name = "sentence-transformers/all-mpnet-base-v2"
+        # Use faster model - all-MiniLM-L6-v2 is 5x faster with similar quality
+        model_name = os.getenv("EMBED_MODEL", "sentence-transformers/all-mpnet-base-v2")
         print(f"  Loading embedding model: {model_name}")
         _embedding_model = SentenceTransformer(model_name)
     return _embedding_model
@@ -262,7 +263,7 @@ def setup_milvus_collection(verbose: bool = True):
         # embedding: vector field (768 dimensions for all-mpnet-base-v2)
         fields = [
             FieldSchema(name="bill_id", dtype=DataType.VARCHAR, is_primary=True, max_length=100),
-            FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=768)
+            FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=768)  # Back to 768
         ]
         
         schema = CollectionSchema(
