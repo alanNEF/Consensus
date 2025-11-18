@@ -41,7 +41,7 @@ export default function TopNav() {
         <Link href="/feed" className="topNavTitle">
           <Logo />
           <span className="topNavTitleText">Consensi</span>
-        </Link>
+            </Link>
         <div className="topNavRight">
           <div className="topNavSearchContainer">
             <form onSubmit={handleSearch} className="topNavSearch">
@@ -74,24 +74,24 @@ export default function TopNav() {
             >
               Feed
             </Link>
-            <Link
-              href="/your-bills"
+                <Link
+                  href="/your-bills"
               className={`topNavLink ${pathname === "/your-bills" ? "active" : ""}`}
-            >
-              Your Bills
-            </Link>
-            <Link
-              href="/account"
+                >
+                  Your Bills
+                </Link>
+                <Link
+                  href="/account"
               className={`topNavLink ${pathname === "/account" ? "active" : ""}`}
-            >
+                >
               Profile
-            </Link>
-            <Link
-              href="/login"
+                </Link>
+                <Link
+                  href="/login"
               className={`topNavLink ${pathname === "/login" ? "active" : ""}`}
             >
               Logout
-            </Link>
+                </Link>
           </div>
         </div>
       </div>
