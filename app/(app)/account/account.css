@@ -2,11 +2,17 @@
     min-height: 100vh;
     background-color: #1a1a1a;
     padding: 2rem 1rem;
+    box-sizing: border-box;
+    width: 100%;
+    overflow-x: hidden;
 }
 
 .accountContent {
     max-width: 800px;
     margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 0.5rem;
 }
 
 .accountHeader {
@@ -59,6 +65,8 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    width: 100%;
+    min-width: 0;
 }
 
 .fieldLabel {
@@ -76,6 +84,9 @@
     font-size: 1rem;
     outline: none;
     transition: border-color 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+    max-width: 100%;
 }
 
 .fieldInput:focus {
@@ -91,6 +102,13 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.demographicFieldsContainer .formField {
+    min-width: 0;
+    width: 100%;
 }
 
 .fieldSelect {
@@ -103,6 +121,9 @@
     outline: none;
     transition: border-color 0.2s;
     cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
+    max-width: 100%;
 }
 
 .fieldSelect:focus {
@@ -118,6 +139,81 @@
     .demographicFieldsContainer {
         grid-template-columns: 1fr;
     }
+    
+    .topicsGrid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 0.5rem;
+    }
+    
+    .topicTag {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+    }
+    
+    .topicCheckmark {
+        width: 14px;
+        height: 14px;
+        min-width: 14px;
+        min-height: 14px;
+        margin-left: 0.25rem;
+    }
+    
+    .topicCheckmark svg {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .accountContainer {
+        padding: 1rem 0.5rem;
+    }
+    
+    .accountSection {
+        padding: 1.5rem;
+    }
+    
+    .fieldInput,
+    .fieldSelect {
+        font-size: 16px; /* Prevents zoom on iOS */
+        padding: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .topicsGrid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 0.5rem;
+    }
+    
+    .topicTag {
+        padding: 0.5rem;
+        font-size: 0.75rem;
+        min-height: 40px;
+    }
+    
+    .topicCheckmark {
+        width: 12px;
+        height: 12px;
+        min-width: 12px;
+        min-height: 12px;
+        margin-left: 0.25rem;
+    }
+    
+    .topicCheckmark svg {
+        width: 12px;
+        height: 12px;
+    }
+    
+    .accountTitle {
+        font-size: 2rem;
+    }
+    
+    .sectionTitle {
+        font-size: 1.25rem;
+    }
+    
+    .accountSection {
+        padding: 1rem;
+    }
 }
 
 .fieldHelper {
@@ -128,7 +224,7 @@
 
 .topicsGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 0.75rem;
 }
 
@@ -147,6 +243,9 @@
     cursor: pointer;
     transition: all 0.2s ease;
     backdrop-filter: blur(5px);
+    overflow: hidden;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .topicTag:hover {
@@ -171,6 +270,10 @@
     justify-content: center;
     color: white;
     flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    min-height: 16px;
 }
 
 .topicCheckmark svg {
@@ -376,11 +479,5 @@
     color: #9f9f9f;
     text-align: center;
     font-size: 1rem;
-}
-
-@media (max-width: 768px) {
-    .topicsGrid {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    }
 }
 

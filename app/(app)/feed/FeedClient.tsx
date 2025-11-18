@@ -29,9 +29,6 @@ export default function FeedClient({
     const scrollRefs = useRef<Record<string, HTMLDivElement | null>>({});
     const [arrowStates, setArrowStates] = useState<Record<string, { left: boolean; right: boolean }>>({});
     const scrollIntervals = useRef<Record<string, NodeJS.Timeout | null>>({});
-    const lastActivityTime = useRef<number>(Date.now());
-    const [showSwipeHint, setShowSwipeHint] = useState(false);
-    const swipeHintTimeout = useRef<NodeJS.Timeout | null>(null);
     const wasHolding = useRef<Record<string, boolean>>({});
 
     // Update arrow states based on scroll position
@@ -79,14 +76,6 @@ export default function FeedClient({
         };
     }, [allCategories]);
 
-    const updateActivity = () => {
-        lastActivityTime.current = Date.now();
-        setShowSwipeHint(false);
-        if (swipeHintTimeout.current) {
-            clearTimeout(swipeHintTimeout.current);
-            swipeHintTimeout.current = null;
-        }
-    };
 
     const startContinuousScroll = (category: string, direction: 'left' | 'right') => {
         const container = scrollRefs.current[category];
@@ -200,7 +189,7 @@ export default function FeedClient({
     };
 
     const handleCardHover = (category: string, index: number) => {
-        updateActivity();
+
         setExpandedCardIndex((prev) => ({
             ...prev,
             [category]: index,
@@ -216,39 +205,6 @@ export default function FeedClient({
     };
 
 
-    // Inactivity popup effect
-    useEffect(() => {
-        const checkInactivity = () => {
-            const timeSinceActivity = Date.now() - lastActivityTime.current;
-            if (timeSinceActivity >= 5000 && !showSwipeHint) {
-                setShowSwipeHint(true);
-            }
-        };
-
-        const activityInterval = setInterval(() => {
-            checkInactivity();
-        }, 1000);
-
-        // Track various user activities
-        const handleActivity = () => {
-            updateActivity();
-        };
-
-        window.addEventListener('mousedown', handleActivity);
-        window.addEventListener('mousemove', handleActivity);
-        window.addEventListener('touchstart', handleActivity);
-        window.addEventListener('scroll', handleActivity);
-        window.addEventListener('keydown', handleActivity);
-
-        return () => {
-            clearInterval(activityInterval);
-            window.removeEventListener('mousedown', handleActivity);
-            window.removeEventListener('mousemove', handleActivity);
-            window.removeEventListener('touchstart', handleActivity);
-            window.removeEventListener('scroll', handleActivity);
-            window.removeEventListener('keydown', handleActivity);
-        };
-    }, [showSwipeHint]);
 
     // Cleanup intervals on unmount
     useEffect(() => {
@@ -282,7 +238,7 @@ export default function FeedClient({
                                 <button
                                     className={`scrollArrow scrollArrowLeft ${isLeftDisabled ? "disabled" : ""}`}
                                     onClick={(e) => {
-                                        updateActivity();
+
                                         // Only do single scroll if we weren't holding the button
                                         if (!wasHolding.current[category]) {
                                             scrollLeft(category);
@@ -290,28 +246,23 @@ export default function FeedClient({
                                         wasHolding.current[category] = false;
                                     }}
                                     onMouseDown={() => {
-                                        updateActivity();
                                         if (!isLeftDisabled) {
                                             startContinuousScroll(category, 'left');
                                         }
                                     }}
                                     onMouseUp={() => {
-                                        updateActivity();
                                         stopContinuousScroll(category);
                                     }}
                                     onMouseLeave={() => {
-                                        updateActivity();
                                         stopContinuousScroll(category);
                                     }}
                                     onTouchStart={(e) => {
-                                        updateActivity();
                                         e.preventDefault();
                                         if (!isLeftDisabled) {
                                             startContinuousScroll(category, 'left');
                                         }
                                     }}
                                     onTouchEnd={() => {
-                                        updateActivity();
                                         stopContinuousScroll(category);
                                     }}
                                     disabled={isLeftDisabled}
@@ -328,7 +279,6 @@ export default function FeedClient({
                                         }
                                     }}
                                     onScroll={() => {
-                                        updateActivity();
                                         updateArrowStates(category);
                                     }}
                                 >
@@ -350,7 +300,6 @@ export default function FeedClient({
                                 <button
                                     className={`scrollArrow scrollArrowRight ${isRightDisabled ? "disabled" : ""}`}
                                     onClick={(e) => {
-                                        updateActivity();
                                         // Only do single scroll if we weren't holding the button
                                         if (!wasHolding.current[category]) {
                                             scrollRight(category);
@@ -358,28 +307,23 @@ export default function FeedClient({
                                         wasHolding.current[category] = false;
                                     }}
                                     onMouseDown={() => {
-                                        updateActivity();
                                         if (!isRightDisabled) {
                                             startContinuousScroll(category, 'right');
                                         }
                                     }}
                                     onMouseUp={() => {
-                                        updateActivity();
                                         stopContinuousScroll(category);
                                     }}
                                     onMouseLeave={() => {
-                                        updateActivity();
                                         stopContinuousScroll(category);
                                     }}
                                     onTouchStart={(e) => {
-                                        updateActivity();
                                         e.preventDefault();
                                         if (!isRightDisabled) {
                                             startContinuousScroll(category, 'right');
                                         }
                                     }}
                                     onTouchEnd={() => {
-                                        updateActivity();
                                         stopContinuousScroll(category);
                                     }}
                                     disabled={isRightDisabled}
@@ -410,7 +354,6 @@ export default function FeedClient({
                                 <button
                                     className={`scrollArrow scrollArrowLeft ${isLeftDisabled ? "disabled" : ""}`}
                                     onClick={(e) => {
-                                        updateActivity();
                                         // Only do single scroll if we weren't holding the button
                                         if (!wasHolding.current[category]) {
                                             scrollLeft(category);
@@ -418,28 +361,23 @@ export default function FeedClient({
                                         wasHolding.current[category] = false;
                                     }}
                                     onMouseDown={() => {
-                                        updateActivity();
                                         if (!isLeftDisabled) {
                                             startContinuousScroll(category, 'left');
                                         }
                                     }}
                                     onMouseUp={() => {
-                                        updateActivity();
                                         stopContinuousScroll(category);
                                     }}
                                     onMouseLeave={() => {
-                                        updateActivity();
                                         stopContinuousScroll(category);
                                     }}
                                     onTouchStart={(e) => {
-                                        updateActivity();
                                         e.preventDefault();
                                         if (!isLeftDisabled) {
                                             startContinuousScroll(category, 'left');
                                         }
                                     }}
                                     onTouchEnd={() => {
-                                        updateActivity();
                                         stopContinuousScroll(category);
                                     }}
                                     disabled={isLeftDisabled}
@@ -456,7 +394,6 @@ export default function FeedClient({
                                         }
                                     }}
                                     onScroll={() => {
-                                        updateActivity();
                                         updateArrowStates(category);
                                     }}
                                 >
@@ -477,7 +414,6 @@ export default function FeedClient({
                                 <button
                                     className={`scrollArrow scrollArrowRight ${isRightDisabled ? "disabled" : ""}`}
                                     onClick={(e) => {
-                                        updateActivity();
                                         // Only do single scroll if we weren't holding the button
                                         if (!wasHolding.current[category]) {
                                             scrollRight(category);
@@ -485,28 +421,23 @@ export default function FeedClient({
                                         wasHolding.current[category] = false;
                                     }}
                                     onMouseDown={() => {
-                                        updateActivity();
                                         if (!isRightDisabled) {
                                             startContinuousScroll(category, 'right');
                                         }
                                     }}
                                     onMouseUp={() => {
-                                        updateActivity();
                                         stopContinuousScroll(category);
                                     }}
                                     onMouseLeave={() => {
-                                        updateActivity();
                                         stopContinuousScroll(category);
                                     }}
                                     onTouchStart={(e) => {
-                                        updateActivity();
                                         e.preventDefault();
                                         if (!isRightDisabled) {
                                             startContinuousScroll(category, 'right');
                                         }
                                     }}
                                     onTouchEnd={() => {
-                                        updateActivity();
                                         stopContinuousScroll(category);
                                     }}
                                     disabled={isRightDisabled}
@@ -519,11 +450,6 @@ export default function FeedClient({
                     );
                 })}
             </div>
-            {showSwipeHint && (
-                <div className="swipeHint">
-                    <p>Swipe left or right on your phone or keypad to cycle through bills</p>
-                </div>
-            )}
         </div>
     );
 }

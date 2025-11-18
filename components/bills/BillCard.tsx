@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import type { Bill, BillSummary, SavedBill, Representative } from "@/types";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import ContactCardGallery from "@/components/contact/ContactCardGallery";
+import ContactCard from "@/components/contact/ContactCard";
 import ChatModal from "@/components/chatbot/ChatModal";
+import ChatPage from "@/components/chatbot/chatbot";
 import "./BillCard.css";
 
 interface BillCardProps {
@@ -52,8 +54,10 @@ export default function BillCard({
 }: BillCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isContactGalleryOpen, setIsContactGalleryOpen] = useState(false);
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [isEndorsed, setIsEndorsed] = useState(isEndorsedProp ?? false);
   const [isOpposed, setIsOpposed] = useState(false);
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
 
   useEffect(() => {
     if (isEndorsedProp !== undefined) {
@@ -63,6 +67,20 @@ export default function BillCard({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bill.id, isEndorsedProp]);
+
+  // Check screen size for responsive behavior
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsSmallScreen(window.innerWidth < 1200);
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+
+    return () => {
+      window.removeEventListener('resize', checkScreenSize);
+    };
+  }, []);
 
   const checkEndorsementStatus = async () => {
     try {
@@ -106,6 +124,7 @@ export default function BillCard({
     if (target === currentTarget) {
       setIsModalOpen(false);
       setIsContactGalleryOpen(false);
+      setIsChatModalOpen(false);
       return;
     }
 
@@ -113,16 +132,32 @@ export default function BillCard({
     if (target.classList.contains('contactGalleryOverlay')) {
       setIsModalOpen(false);
       setIsContactGalleryOpen(false);
+      setIsChatModalOpen(false);
     }
   };
 
   const handleContactRepresentatives = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsContactGalleryOpen(true);
+    if (isSmallScreen) {
+      setIsChatModalOpen(false);
+      setIsContactGalleryOpen(true);
+    } else {
+      setIsContactGalleryOpen(true);
+    }
   };
 
   const handleCloseContactGallery = () => {
     setIsContactGalleryOpen(false);
+  };
+
+  const handleOpenChatbot = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsContactGalleryOpen(false);
+    setIsChatModalOpen(true);
+  };
+
+  const handleCloseChatbot = () => {
+    setIsChatModalOpen(false);
   };
 
   const getCategoryClass = (category: string | undefined) => {
@@ -242,14 +277,19 @@ export default function BillCard({
 
       {isModalOpen && (
         <div
-          className={`modalOverlay ${isContactGalleryOpen ? 'hasGallery' : ''} hasChatModal`}
+          className={`modalOverlay ${isContactGalleryOpen ? 'hasGallery' : ''} ${!isSmallScreen && !isChatModalOpen ? 'hasChatModal' : ''}`}
           onClick={handleCloseModal}
         >
-          <ChatModal
-            billId={bill.id}
-            isVisible={isModalOpen}
-          />
-          <div
+          {!isSmallScreen && !isChatModalOpen && (
+            <ChatModal
+              billId={bill.id}
+              isVisible={isModalOpen}
+            />
+          )}
+          
+          {/* Main modal content - hide when small screen overlays are active */}
+          {(!isSmallScreen || (!isChatModalOpen && !isContactGalleryOpen)) && (
+            <div
             className="modalContent"
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
@@ -404,10 +444,54 @@ export default function BillCard({
               >
                 Contact Representatives
               </PrimaryButton>
+              {isSmallScreen && (
+                <PrimaryButton
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={handleOpenChatbot}
+                >
+                  Open Chatbot
+                </PrimaryButton>
+              )}
             </div>
           </div>
+          )}
 
-          {isContactGalleryOpen && (
+          {/* Small screen overlays */}
+          {isSmallScreen && isChatModalOpen && (
+            <div className="smallScreenOverlay">
+              <div className="smallScreenOverlayHeader">
+                <h3>Ask Questions</h3>
+                <button className="smallScreenClose" onClick={handleCloseChatbot}>
+                  ×
+                </button>
+              </div>
+              <div className="smallScreenOverlayContent">
+                <ChatPage billId={bill.id} />
+              </div>
+            </div>
+          )}
+
+          {isSmallScreen && isContactGalleryOpen && representatives && representatives.length > 0 && (
+            <div className="smallScreenOverlay">
+              <div className="smallScreenOverlayHeader">
+                <h3>Contact Representatives</h3>
+                <button className="smallScreenClose" onClick={handleCloseContactGallery}>
+                  ×
+                </button>
+              </div>
+              <div className="smallScreenOverlayContent">
+                <div className="smallScreenContactWrapper">
+                  {representatives.map((representative, index) => (
+                    <ContactCard key={index} representative={representative} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Large screen gallery */}
+          {!isSmallScreen && isContactGalleryOpen && (
             <ContactCardGallery
               representatives={representatives || []}
               isVisible={isContactGalleryOpen}

@@ -2,12 +2,16 @@
   min-height: 100vh;
   background-color: #1a1a1a;
   padding: 2rem 0;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 .yourBillsContent {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 1rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .yourBillsHeader {
@@ -57,6 +61,8 @@
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
   gap: 2rem;
   padding: 1rem 0;
+  justify-items: center;
+  width: 100%;
 }
 
 .billsGrid .billCard {
@@ -91,4 +97,91 @@
   font-weight: bold;
   color: white;
   margin-bottom: 1rem;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 1200px) {
+  .yourBillsContent {
+    padding: 0 1.5rem;
+  }
+  
+  .billsGrid {
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    justify-content: center;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 992px) {
+  .yourBillsContent {
+    padding: 0 1rem;
+  }
+  
+  .billsGrid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .yourBillsContainer {
+    padding: 1rem 0;
+  }
+  
+  .yourBillsContent {
+    padding: 0 0.75rem;
+  }
+  
+  .billsGrid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    justify-items: center;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  
+  .billsGrid .billCard {
+    width: 100%;
+    max-width: 500px;
+  }
+  
+  .yourBillsTitle {
+    font-size: 1.75rem;
+  }
+  
+  .searchBar {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .yourBillsContainer {
+    padding: 0.75rem 0;
+  }
+  
+  .yourBillsContent {
+    padding: 0 0.5rem;
+  }
+  
+  .billsGrid {
+    gap: 1rem;
+    max-width: 100%;
+  }
+  
+  .billsGrid .billCard {
+    padding: 1.5rem;
+    max-width: 100%;
+  }
+  
+  .billsGrid .billCard .billTitle {
+    font-size: 1.25rem;
+  }
+  
+  .yourBillsTitle {
+    font-size: 1.5rem;
+  }
+  
+  .billsGridTitle {
+    font-size: 1.25rem;
+  }
 }

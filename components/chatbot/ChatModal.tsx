@@ -1,19 +1,36 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import ChatPage from "./chatbot";
 import "./ChatModal.css";
 
 interface ChatModalProps {
   billId: string;
   isVisible: boolean;
+  isSmallScreenOverlay?: boolean;
 }
 
 export default function ChatModal({
   billId,
   isVisible,
+  isSmallScreenOverlay = false,
 }: ChatModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+
+  // Check screen size
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsSmallScreen(window.innerWidth < 1200);
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+
+    return () => {
+      window.removeEventListener('resize', checkScreenSize);
+    };
+  }, []);
 
   // Match the height of the bill card modal with animation
   useEffect(() => {
@@ -91,9 +108,11 @@ export default function ChatModal({
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="chatModalHeader">
-          <h3 className="chatModalTitle">Ask Questions</h3>
-        </div>
+        {!isSmallScreen && !isSmallScreenOverlay && (
+          <div className="chatModalHeader">
+            <h3 className="chatModalTitle">Ask Questions</h3>
+          </div>
+        )}
         <div className="chatModalContent">
           <ChatPage billId={billId} />
         </div>
