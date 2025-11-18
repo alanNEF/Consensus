@@ -15,6 +15,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .billCard.expanded {
@@ -35,6 +36,7 @@
   line-height: 1.3;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -48,6 +50,7 @@
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -436,5 +439,39 @@
     max-width: 100%;
     margin-bottom: 0;
     width: 100%;
+  }
+}
+
+/* Add responsive design for BillCard */
+@media (max-width: 768px) {
+  .billCard {
+    min-width: 260px;
+    width: 260px;
+  }
+  
+  .billCard.expanded {
+    width: 280px;
+  }
+}
+
+@media (max-width: 480px) {
+  .billCard {
+    min-width: 240px;
+    width: 240px;
+    padding: 1.25rem;
+    min-height: 280px;
+    max-height: 280px;
+  }
+  
+  .billCard.expanded {
+    width: 260px;
+  }
+  
+  .billTitle {
+    font-size: 1.125rem;
+  }
+  
+  .billDescription {
+    font-size: 0.85rem;
   }
 }

@@ -7,12 +7,14 @@
 .topNavContainer {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   height: 64px;
   gap: 1rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .topNavTitle {
@@ -149,5 +151,102 @@
   right: 0;
   height: 2px;
   background-color: #0474b6;
+}
+
+/* Responsive design for TopNav */
+@media (max-width: 1200px) {
+  .topNavContainer {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (max-width: 992px) {
+  .topNavContainer {
+    padding: 0 1rem;
+  }
+  
+  .topNavSearch {
+    width: 220px;
+  }
+  
+  .topNavSearchContainer {
+    margin-right: 1.5rem;
+  }
+  
+  .topNavLinks {
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .topNavContainer {
+    padding: 0 0.75rem;
+    gap: 0.75rem;
+  }
+  
+  .topNavSearch {
+    width: 180px;
+  }
+  
+  .topNavSearchContainer {
+    margin-right: 1rem;
+  }
+  
+  .topNavLinks {
+    gap: 1rem;
+  }
+  
+  .topNavLink {
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .topNavContainer {
+    padding: 0 0.5rem;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+  }
+  
+  .topNavTitleText {
+    display: none; /* Hide text on very small screens, keep logo */
+  }
+  
+  .topNavSearchContainer {
+    margin-right: 0.75rem;
+  }
+  
+  .topNavSearch {
+    width: 140px;
+  }
+  
+  .topNavLinks {
+    gap: 0.75rem;
+  }
+  
+  .topNavLink {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .topNavContainer {
+    padding: 0 0.5rem;
+    height: 56px; /* Slightly shorter on mobile */
+  }
+  
+  .topNavSearch {
+    width: 120px;
+  }
+  
+  .topNavLinks {
+    gap: 0.5rem;
+  }
+  
+  /* Stack navigation on very small screens if needed */
+  .topNavRight {
+    flex-shrink: 1;
+    min-width: 0;
+  }
 }
 

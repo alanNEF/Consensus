@@ -21,7 +21,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <SessionProvider>
           <ConditionalTopNav />
-          <main style={{ backgroundColor: "#1a1a1a", minHeight: "100vh" }}>
+          <main style={{ backgroundColor: "#1a1a1a", minHeight: "100vh", width: "100%", overflow: "hidden" }}>
             {children}
           </main>
         </SessionProvider>
