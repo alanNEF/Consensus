@@ -14,6 +14,8 @@ from vectors import (
     SUPABASE_SERVICE_ROLE_KEY,
 )
 
+# Add at module level
+_cached_index_metric = None
 
 def search_bills(query: str, top_k: int = 10, metric: str = "L2") -> List[Dict[str, Any]]:
     """
@@ -28,32 +30,42 @@ def search_bills(query: str, top_k: int = 10, metric: str = "L2") -> List[Dict[s
         List of dictionaries containing bill_id and distance/score for each result
     """
     try:
+        start = time.time()
+        
         # Generate embedding for the query
         print(f"Searching for: '{query}'")
+        embed_start = time.time()
         query_embedding = generate_embedding(query)
+        print(f"  Embedding generation: {time.time() - embed_start:.3f}s")
         
         if query_embedding is None:
             print("  [ERROR] Failed to generate embedding for query")
             return []
         
         # Get Milvus collection
+        collection_start = time.time()
         collection = get_milvus_collection()
+        print(f"  Collection loading: {time.time() - collection_start:.3f}s")
+        
         if collection is None:
             return []
         
-        # Get the index metric type (must match for search)
-        index_metric = "L2"  # Default
-        try:
-            indexes = collection.indexes
-            if indexes and len(indexes) > 0:
-                # Get the metric type from the first index on the embedding field
-                for idx in indexes:
-                    if idx.field_name == "embedding":
-                        index_metric = idx.params.get("metric_type", "L2")
-                        break
-        except Exception:
-            # If we can't get index info, default to L2
-            pass
+        # Get the index metric type (cached)
+        global _cached_index_metric
+        if _cached_index_metric is None:
+            index_metric = "L2"  # Default
+            try:
+                indexes = collection.indexes
+                if indexes and len(indexes) > 0:
+                    for idx in indexes:
+                        if idx.field_name == "embedding":
+                            index_metric = idx.params.get("metric_type", "L2")
+                            _cached_index_metric = index_metric
+                            break
+            except Exception:
+                pass
+        else:
+            index_metric = _cached_index_metric
         
         # Normalize vectors for cosine similarity (but still use index metric for search)
         using_cosine = False
@@ -75,12 +87,22 @@ def search_bills(query: str, top_k: int = 10, metric: str = "L2") -> List[Dict[s
             print(f"  [WARNING] Index uses {index_metric} metric, switching from {metric} to {index_metric}")
             metric = index_metric
         
+        # Calculate optimal ef for HNSW based on top_k
+        # ef should be >= top_k, typically 2-3x for good recall
+        # But not too high to avoid unnecessary computation
+        ef_value = max(top_k * 2, 32)  # Minimum 32, ideally 2x top_k
+        # Cap at reasonable maximum to avoid excessive computation
+        ef_value = min(ef_value, 200)  # Maximum 200 for very large top_k
+        
         # Perform vector similarity search
         search_params = {
             "metric_type": search_metric,
-            "params": {"nprobe": 10}
+            "params": {"ef": ef_value}
         }
         
+        print(f"  [INFO] HNSW search: top_k={top_k}, ef={ef_value}")
+        
+        search_start = time.time()
         results = collection.search(
             data=[query_embedding],
             anns_field="embedding",
@@ -88,6 +110,7 @@ def search_bills(query: str, top_k: int = 10, metric: str = "L2") -> List[Dict[s
             limit=top_k,
             output_fields=["bill_id"]
         )
+        print(f"  Milvus search: {time.time() - search_start:.3f}s")
         
         # Format results and filter by similarity threshold
         search_results = []
@@ -117,6 +140,7 @@ def search_bills(query: str, top_k: int = 10, metric: str = "L2") -> List[Dict[s
         
         metric_display = "COSINE-like" if using_cosine else search_metric
         print(f"Found {len(search_results)} results above {similarity_threshold} similarity threshold (using {metric_display} similarity)")
+        print(f"  Total search time: {time.time() - start:.3f}s")
         return search_results
         
     except Exception as e:

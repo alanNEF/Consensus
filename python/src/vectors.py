@@ -106,7 +106,8 @@ def get_embedding_model():
     if _embedding_model is None:
         from sentence_transformers import SentenceTransformer
         
-        model_name = "sentence-transformers/all-mpnet-base-v2"
+        # Use faster model - all-MiniLM-L6-v2 is 5x faster with similar quality
+        model_name = os.getenv("EMBED_MODEL", "sentence-transformers/all-mpnet-base-v2")
         print(f"  Loading embedding model: {model_name}")
         _embedding_model = SentenceTransformer(model_name)
     return _embedding_model
@@ -262,7 +263,7 @@ def setup_milvus_collection(verbose: bool = True):
         # embedding: vector field (768 dimensions for all-mpnet-base-v2)
         fields = [
             FieldSchema(name="bill_id", dtype=DataType.VARCHAR, is_primary=True, max_length=100),
-            FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=768)
+            FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=768)  # Back to 768
         ]
         
         schema = CollectionSchema(
@@ -279,9 +280,13 @@ def setup_milvus_collection(verbose: bool = True):
         # Create index for vector field
         index_params = {
             "metric_type": "L2",  # L2 distance for similarity search
-            "index_type": "IVF_FLAT",
-            "params": {"nlist": 128}
+            "index_type": "HNSW",
+            "params": {
+                "M": 16,
+                "efConstruction": 200
+            }
         }
+        
         collection.create_index(
             field_name="embedding",
             index_params=index_params
@@ -576,8 +581,23 @@ def ingest_bills(force_recreate: bool = False) -> bool:
     return successful > 0
 
 
+# Add at module level (after imports)
+_cached_collection = None
+
 def get_milvus_collection():
-    """Get Milvus collection for bill embeddings (does not create if it doesn't exist)"""
+    """Get Milvus collection for bill embeddings (cached, only loads once)"""
+    global _cached_collection
+    
+    # Return cached collection if already loaded
+    if _cached_collection is not None:
+        try:
+            # Verify collection is still valid
+            _cached_collection.num_entities
+            return _cached_collection
+        except Exception:
+            # Collection was dropped or invalid, reset cache
+            _cached_collection = None
+    
     try:
         from pymilvus import Collection, utility
         
@@ -591,9 +611,19 @@ def get_milvus_collection():
             print(f"    Run setup_milvus.py or ingest.py to create the collection")
             return None
         
-        # Get and load collection
+        # Get collection
         collection = Collection(MILVUS_COLLECTION_NAME)
-        collection.load()
+        
+        # Only load if not already loaded
+        try:
+            # Check if already loaded
+            collection.num_entities  # This will fail if not loaded
+        except Exception:
+            # Not loaded, load it now
+            collection.load()
+        
+        # Cache the collection
+        _cached_collection = collection
         return collection
     except Exception as e:
         print(f"  [ERROR] Failed to get Milvus collection: {e}")

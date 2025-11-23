@@ -17,3 +17,7 @@ torch==2.9.0  # PyTorch (required by transformers and sentence-transformers)
 transformers==4.57.1  # Hugging Face transformers (for zero-shot classification)
 sentence-transformers>=2.2.0  # Sentence embeddings (for bill text embeddings)
 
+# Web service (for persistent embedding service)
+flask>=2.3.0  # Web framework for embedding service
+flask-cors>=4.0.0  # CORS support for Flask
+

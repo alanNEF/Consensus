@@ -21,15 +21,11 @@ const requiredEnvVars = {
   SUPABASE_SERVICE_ROLE_KEY: "Supabase service role key (server-only)",
   DATABASE_URL: "PostgreSQL database URL",
   // AI Providers (optional but recommended)
-  OPENAI_API_KEY: "OpenAI API key (optional, for AI summaries)",
-  ANTHROPIC_API_KEY: "Anthropic API key (optional, alternative to OpenAI)",
   // Congress.gov (optional)
   CONGRESS_GOV_API_KEY: "Congress.gov API key (optional, for real bill data)",
 };
 
 const optionalEnvVars = {
-  OPENAI_EMBED_MODEL: "OpenAI embedding model",
-  OPENAI_CHAT_MODEL: "OpenAI chat model",
   CONGRESS_GOV_BASE: "Congress.gov API base URL",
   SMTP_HOST: "SMTP host for email (magic links)",
   SMTP_PORT: "SMTP port",
