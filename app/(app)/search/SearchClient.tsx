@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import BillCard from "@/components/bills/BillCard";
-import type { Bill, BillSummary } from "@/types";
+import type { Bill, BillSummary, SavedBill } from "@/types";
 import "./search.css";
 
 interface SearchClientProps {
@@ -57,6 +57,73 @@ export default function SearchClient({ query }: SearchClientProps) {
   const [billUrls, setBillUrls] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Fetch endorsements/oppositions once for all bills
+  const [endorsedBillIds, setEndorsedBillIds] = useState<Set<string>>(new Set());
+  const [opposedBillIds, setOpposedBillIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const fetchUserBillStatus = async () => {
+      try {
+        const [endorsementsResponse, oppositionsResponse] = await Promise.all([
+          fetch("/api/user-endorsements"),
+          fetch("/api/user-oppositions"),
+        ]);
+
+        const endorsementsData = await endorsementsResponse.json();
+        const oppositionsData = await oppositionsResponse.json();
+
+        const endorsedIds = new Set<string>(
+          endorsementsData.endorsements?.map((e: SavedBill) => e.bill_id) || []
+        );
+        const opposedIds = new Set<string>(
+          oppositionsData.oppositions?.map((o: SavedBill) => o.bill_id) || []
+        );
+
+        setEndorsedBillIds(endorsedIds);
+        setOpposedBillIds(opposedIds);
+      } catch (error: unknown) {
+        console.error("Error fetching user bill status:", error);
+      }
+    };
+
+    fetchUserBillStatus();
+  }, []);
+
+  // Callbacks to update local state when user endorses/opposes
+  const handleEndorse = (billId: string) => {
+    setEndorsedBillIds(prev => new Set(prev).add(billId));
+    setOpposedBillIds(prev => {
+      const next = new Set(prev);
+      next.delete(billId);
+      return next;
+    });
+  };
+
+  const handleUnendorse = (billId: string) => {
+    setEndorsedBillIds(prev => {
+      const next = new Set(prev);
+      next.delete(billId);
+      return next;
+    });
+  };
+
+  const handleOppose = (billId: string) => {
+    setOpposedBillIds(prev => new Set(prev).add(billId));
+    setEndorsedBillIds(prev => {
+      const next = new Set(prev);
+      next.delete(billId);
+      return next;
+    });
+  };
+
+  const handleUnoppose = (billId: string) => {
+    setOpposedBillIds(prev => {
+      const next = new Set(prev);
+      next.delete(billId);
+      return next;
+    });
+  };
 
   useEffect(() => {
     const performSearch = async () => {
@@ -219,6 +286,12 @@ export default function SearchClient({ query }: SearchClientProps) {
                   }
                 }
                 billUrl={billUrls.get(bill.id) || ""}
+                isEndorsed={endorsedBillIds.has(bill.id)}
+                isOpposed={opposedBillIds.has(bill.id)}
+                onEndorse={handleEndorse}
+                onUnendorse={handleUnendorse}
+                onOppose={handleOppose}
+                onUnoppose={handleUnoppose}
               />
             ))}
           </div>

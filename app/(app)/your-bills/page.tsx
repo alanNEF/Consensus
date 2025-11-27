@@ -149,7 +149,7 @@ export default function YourBillsPage() {
         {(loadingSummaries || loadingUrls) && (
           <p>Loading bill details...</p>
         )}
-        <h2 className="billsGridTitle">Unendorsed Bills</h2>
+        <h2 className="billsGridTitle">Opposed Bills</h2>
         <div className="billsGrid">
           {unendorsedBills
             .filter((bill) =>
@@ -175,6 +175,8 @@ export default function YourBillsPage() {
                   bill={bill}
                   billSummary={summary}
                   billUrl={url}
+                  isEndorsed={false}
+                  isOpposed={true}
                 />
               );
             })}
@@ -205,6 +207,8 @@ export default function YourBillsPage() {
                   bill={bill}
                   billSummary={summary}
                   billUrl={url}
+                  isEndorsed={true}
+                  isOpposed={false}
                 />
               );
             })}

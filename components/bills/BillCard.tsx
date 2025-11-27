@@ -15,8 +15,11 @@ interface BillCardProps {
   onCardClick?: (bill: Bill) => void;
   representatives?: Representative[];
   isEndorsed?: boolean;
+  isOpposed?: boolean;
   onEndorse?: (billId: string) => void;
   onUnendorse?: (billId: string) => void;
+  onOppose?: (billId: string) => void;
+  onUnoppose?: (billId: string) => void;
 }
 
 const categoryColors: Record<string, string> = {
@@ -47,22 +50,32 @@ export default function BillCard({
   onCardClick,
   representatives,
   isEndorsed: isEndorsedProp,
+  isOpposed: isOpposedProp,
   onEndorse,
   onUnendorse,
+  onOppose,
+  onUnoppose,
 }: BillCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isContactGalleryOpen, setIsContactGalleryOpen] = useState(false);
   const [isEndorsed, setIsEndorsed] = useState(isEndorsedProp ?? false);
-  const [isOpposed, setIsOpposed] = useState(false);
+  const [isOpposed, setIsOpposed] = useState(isOpposedProp ?? false);
 
   useEffect(() => {
-    if (isEndorsedProp !== undefined) {
-      setIsEndorsed(isEndorsedProp);
-    } else {
+    // Only fetch if neither prop is provided (parent doesn't know the status)
+    if (isEndorsedProp === undefined && isOpposedProp === undefined) {
       checkEndorsementStatus();
+    } else {
+      // Use props if provided
+      if (isEndorsedProp !== undefined) {
+        setIsEndorsed(isEndorsedProp);
+      }
+      if (isOpposedProp !== undefined) {
+        setIsOpposed(isOpposedProp);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bill.id, isEndorsedProp]);
+  }, [bill.id, isEndorsedProp, isOpposedProp]);
 
   const checkEndorsementStatus = async () => {
     try {
@@ -164,7 +177,7 @@ export default function BillCard({
       }
     } else {
       try {
-        const response = await fetch("/api/endorsemenets", {
+        const response = await fetch("/api/endorsements", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ billId: bill.id }),
@@ -193,7 +206,12 @@ export default function BillCard({
           body: JSON.stringify({ billId: bill.id }),
         });
         if (response.ok) {
-          await checkEndorsementStatus();
+          setIsOpposed(false);
+          if (onUnoppose) {
+            onUnoppose(bill.id);
+          } else {
+            await checkEndorsementStatus();
+          }
         }
       } catch (error: unknown) {
         console.error("Error removing opposition:", error);
@@ -206,14 +224,17 @@ export default function BillCard({
           body: JSON.stringify({ billId: bill.id }),
         });
         if (response.ok) {
-          // Refresh status to ensure we have the latest state
-          await checkEndorsementStatus();
+          setIsOpposed(true);
+          if (onOppose) {
+            onOppose(bill.id);
+          } else {
+            await checkEndorsementStatus();
+          }
         }
       } catch (error: unknown) {
         console.error("Error opposing bill:", error);
       }
     }
-
   };
 
   return (

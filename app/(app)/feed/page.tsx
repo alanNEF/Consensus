@@ -40,83 +40,108 @@ export default async function FeedPage() {
     (category) => !preferredCategories.includes(category)
   );
 
-
   if (!process.env.GEOCODIO_API_KEY) {
     console.error("GEOCOD_API_KEY is not set in environment variables");
   } else {
     console.log("API Key exists:", process.env.GEOCODIO_API_KEY ? "Yes" : "No");
   }
-  // Fetch bills for preferred categories
+
+  // Fetch all categories in parallel
+  const [preferredBillsResults, remainingBillsResults, representativesResult] = await Promise.all([
+    Promise.all(
+      preferredCategories.map(async (category) => ({
+        category,
+        bills: await getBillsByCategory(category),
+      }))
+    ),
+    // Fetch remaining categories in parallel
+    Promise.all(
+      remainingCategories.map(async (category) => ({
+        category,
+        bills: await getBillsByCategory(category),
+      }))
+    ),
+    // Fetch representatives in parallel with bill fetching
+    (async () => {
+      if (!user.residency) return [];
+      try {
+        const geocodResponse = await fetch(
+          `https://api.geocod.io/v1.9/geocode?q=${encodeURIComponent(user.residency)}&country=USA&fields=cd&api_key=${process.env.GEOCODIO_API_KEY}`,
+          {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+        if (geocodResponse.ok) {
+          const geocodData = await geocodResponse.json();
+          return geocodData.results?.[0]?.fields?.congressional_districts?.[0]?.current_legislators || [];
+        }
+        console.error("Error fetching legislators:", geocodResponse.statusText);
+        return [];
+      } catch (error) {
+        console.error("Error fetching legislators:", error);
+        return [];
+      }
+    })(),
+  ]);
+
+  // Build maps from results
   const billsByCategoryPreferred = new Map<string, Bill[]>();
-  for (const category of preferredCategories) {
-    const bills = await getBillsByCategory(category);
+  for (const { category, bills } of preferredBillsResults) {
     billsByCategoryPreferred.set(category, bills);
   }
 
-  // Fetch bills for remaining categories
   const billsByCategoryRemaining = new Map<string, Bill[]>();
-  for (const category of remainingCategories) {
-    const bills = await getBillsByCategory(category);
+  for (const { category, bills } of remainingBillsResults) {
     billsByCategoryRemaining.set(category, bills);
   }
 
+  // Collect all unique bills
+  const allBills: Bill[] = [];
+  const seenBillIds = new Set<string>();
+  
+  for (const bills of billsByCategoryPreferred.values()) {
+    for (const bill of bills) {
+      if (!seenBillIds.has(bill.id)) {
+        seenBillIds.add(bill.id);
+        allBills.push(bill);
+      }
+    }
+  }
+  for (const bills of billsByCategoryRemaining.values()) {
+    for (const bill of bills) {
+      if (!seenBillIds.has(bill.id)) {
+        seenBillIds.add(bill.id);
+        allBills.push(bill);
+      }
+    }
+  }
+
+  // Fetch all summaries and URLs in parallel
+  const summaryAndUrlResults = await Promise.all(
+    allBills.map(async (bill) => {
+      const [sum, url] = await Promise.all([
+        getBillSummary(bill.id || ""),
+        assembleLink(bill),
+      ]);
+      return { billId: bill.id, sum, url };
+    })
+  );
+
+  // Build summary and URL maps
   const billSummaries = new Map<string, BillSummary>();
   const billUrls = new Map<string, string>();
-  for (const [, bills] of billsByCategoryPreferred.entries()) {
-    for (const bill of bills) {
-      const sum = await getBillSummary(bill.id || "");
-      const url = await assembleLink(bill);
-      if (sum) {
-        billSummaries.set(bill.id, sum as BillSummary);
-      }
-      if (url) {
-        billUrls.set(bill.id, url);
-      }
+  
+  for (const { billId, sum, url } of summaryAndUrlResults) {
+    if (sum) {
+      billSummaries.set(billId, sum as BillSummary);
+    }
+    if (url) {
+      billUrls.set(billId, url);
     }
   }
 
-  for (const [, bills] of billsByCategoryRemaining.entries()) {
-    for (const bill of bills) {
-      const sum = await getBillSummary(bill.id || "");
-      const url = await assembleLink(bill);
-      if (sum) {
-        billSummaries.set(bill.id, sum as BillSummary);
-      }
-      if (url) {
-        billUrls.set(bill.id, url);
-      }
-    }
-  }
-
-  // Fetch legislators using the user's residency directly
-  let representatives = [];
-  console.log(user.residency);
-  if (user.residency) {
-    try {
-      const geocodResponse = await fetch(
-        `https://api.geocod.io/v1.9/geocode?q=${encodeURIComponent(user.residency)}&country=USA&fields=cd&api_key=${process.env.GEOCODIO_API_KEY}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (geocodResponse.ok) {
-        const geocodData = await geocodResponse.json();
-        console.log(geocodData);
-        representatives = geocodData.results?.[0]?.fields?.congressional_districts?.[0]?.current_legislators || [];
-      } else {
-        console.error("Error fetching legislators:", geocodResponse.statusText);
-      }
-    } catch (error) {
-      console.error("Error fetching legislators:", error);
-      // Continue without representatives if the API call fails
-    }
-  }
-
-  console.log(representatives);
+  const representatives = representativesResult;
 
   return (
     <FeedClient
