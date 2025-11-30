@@ -10,10 +10,11 @@ from pathlib import Path
 from dotenv import load_dotenv
 from typing import List, Dict, Any, Tuple, Optional
 import numpy as np
-from transformers import pipeline
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
+
+from vectors import generate_embedding, get_bill_embedding
 
 # Load environment variables
 # Look for .env file in the python directory (parent of src)
@@ -42,16 +43,24 @@ CANDIDATE_LABELS = [
     'Taxation', 'Civil Rights', 'Criminal Justice', 'Foreign Policy',
 ]
 
-# Initialize classifier (lazy loading)
-_classifier = None
+# Cached label embeddings for similarity-based classification
+_label_embeddings: Optional[np.ndarray] = None
 
 
-def get_classifier():
-    """Get or initialize the zero-shot classifier"""
-    global _classifier
-    if _classifier is None:
-        _classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
-    return _classifier
+def get_label_embeddings() -> np.ndarray:
+    """
+    Lazily generate and cache embeddings for each candidate label
+    using the shared embedding model.
+    """
+    global _label_embeddings
+    if _label_embeddings is None:
+        embeddings = []
+        for label in CANDIDATE_LABELS:
+            emb = generate_embedding(label)
+            embeddings.append(emb)
+        _label_embeddings = np.array(embeddings, dtype=float)
+    return _label_embeddings
+
 
 def softmax(x: np.ndarray) -> np.ndarray:
     """Compute softmax values for each sets of scores in x.
@@ -63,38 +72,75 @@ def softmax(x: np.ndarray) -> np.ndarray:
 
 def classify_bill_text(text: str, threshold_std: float = 0.8) -> List[Tuple[str, float]]:
     """
-    Classify bill text into categories using zero-shot classification.
-    
-    Args:
-        text: The bill text to classify
-        threshold_std: Number of standard deviations above mean to use as threshold (default: 0.8)
-    
-    Returns:
-        List of tuples (label, score) for categories that meet the threshold
+    Classify bill text into categories using embedding-based similarity
+    between the bill text and the candidate label strings.
+
+    This:
+    - Embeds the bill text and each candidate label using the same model.
+    - Computes cosine similarities.
+    - Applies a mean + threshold_std * std cutoff on normalized scores,
+      allowing multiple but only the most appropriate labels.
     """
-    classifier = get_classifier()
-    
-    # Perform classification
-    return_value = classifier(text, CANDIDATE_LABELS, multi_label=True)
-    
-    # Get scores and apply softmax
-    scores = np.array(return_value["scores"])
-    softmax_scores = softmax(scores)
-    
-    # Calculate threshold
-    mean_score = np.mean(softmax_scores)
-    std_dev = np.std(softmax_scores)
+    # Get cached label embeddings
+    label_embeddings = get_label_embeddings()  # shape: (num_labels, dim)
+
+    # Embed bill text
+    bill_embedding = np.array(generate_embedding(text), dtype=float)  # shape: (dim,)
+
+    # Normalize vectors to compute cosine similarity
+    bill_norm = np.linalg.norm(bill_embedding) + 1e-8
+    label_norms = np.linalg.norm(label_embeddings, axis=1) + 1e-8
+
+    # Cosine similarities between bill and each label
+    sims = (label_embeddings @ bill_embedding) / (label_norms * bill_norm)
+    sims = np.clip(sims, -1.0, 1.0)
+
+    # Convert similarities into normalized scores
+    softmax_scores = softmax(sims)
+
+    # Threshold: keep labels significantly above the mean
+    mean_score = float(np.mean(softmax_scores))
+    std_dev = float(np.std(softmax_scores))
     threshold = mean_score + (threshold_std * std_dev)
-    
-    # Filter results
-    top_results = []
-    for i in range(len(softmax_scores)):
-        if softmax_scores[i] >= threshold:
-            top_results.append((return_value['labels'][i], float(softmax_scores[i])))
-    
+
+    top_results: List[Tuple[str, float]] = []
+    for label, score in zip(CANDIDATE_LABELS, softmax_scores):
+        if score >= threshold:
+            top_results.append((label, float(score)))
+
     # Sort by score (descending)
     top_results.sort(key=lambda x: x[1], reverse=True)
-    
+
+    return top_results
+
+
+def classify_bill_embedding(embedding: List[float], threshold_std: float = 0.8) -> List[Tuple[str, float]]:
+    """
+    Classify a bill from a precomputed embedding vector using the same
+    label-embedding cosine similarity pipeline as classify_bill_text.
+    """
+    label_embeddings = get_label_embeddings()
+
+    bill_embedding = np.array(embedding, dtype=float)
+
+    bill_norm = np.linalg.norm(bill_embedding) + 1e-8
+    label_norms = np.linalg.norm(label_embeddings, axis=1) + 1e-8
+
+    sims = (label_embeddings @ bill_embedding) / (label_norms * bill_norm)
+    sims = np.clip(sims, -1.0, 1.0)
+
+    softmax_scores = softmax(sims)
+
+    mean_score = float(np.mean(softmax_scores))
+    std_dev = float(np.std(softmax_scores))
+    threshold = mean_score + (threshold_std * std_dev)
+
+    top_results: List[Tuple[str, float]] = []
+    for label, score in zip(CANDIDATE_LABELS, softmax_scores):
+        if score >= threshold:
+            top_results.append((label, float(score)))
+
+    top_results.sort(key=lambda x: x[1], reverse=True)
     return top_results
 
 
@@ -174,12 +220,22 @@ def classify_bill_in_database(bill: Dict[str, Any], threshold_std: float = 0.8) 
     """Classify a single bill and update its categories in the database"""
     bill_id = bill["id"]
     bill_title = bill.get("title", "")
-    
+
+    # First, try to use an existing embedding from Milvus
+    # COMMENTED OUT: Milvus DB not currently available
+    # bill_embedding = get_bill_embedding(bill_id)
+
+    # If no embedding exists, fall back to text-based embedding
+    # COMMENTED OUT: Always use text-based path for now
+    # if bill_embedding is not None:
+    #     use_embedding_only = True
+    # else:
+    #     use_embedding_only = False
     # Get full bill text (prefer from bill dict, otherwise fetch from database)
     bill_text = bill.get("bill_text")
     if not bill_text:
         bill_text = get_bill_text(bill_id)
-    
+
     # Prepare text for classification
     if bill_text:
         classification_text = bill_text
@@ -190,6 +246,10 @@ def classify_bill_in_database(bill: Dict[str, Any], threshold_std: float = 0.8) 
     
     # Classify bill
     try:
+        # COMMENTED OUT: Using text-based classification only (Milvus not available)
+        # if use_embedding_only:
+        #     classification_results = classify_bill_embedding(bill_embedding, threshold_std)
+        # else:
         classification_results = classify_bill_text(classification_text, threshold_std)
         
         # Print each prediction from the AI model

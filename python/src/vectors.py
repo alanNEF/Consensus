@@ -587,7 +587,7 @@ _cached_collection = None
 def get_milvus_collection():
     """Get Milvus collection for bill embeddings (cached, only loads once)"""
     global _cached_collection
-    
+
     # Return cached collection if already loaded
     if _cached_collection is not None:
         try:
@@ -627,6 +627,32 @@ def get_milvus_collection():
         return collection
     except Exception as e:
         print(f"  [ERROR] Failed to get Milvus collection: {e}")
+        return None
+
+
+def get_bill_embedding(bill_id: str) -> Optional[List[float]]:
+    """
+    Fetch an existing embedding for a bill from Milvus by bill_id.
+
+    Returns:
+        The embedding vector as a list of floats, or None if not found
+        or if Milvus is unavailable.
+    """
+    try:
+        collection = get_milvus_collection()
+        if collection is None:
+            return None
+
+        expr = f'bill_id == "{bill_id}"'
+        results = collection.query(expr=expr, output_fields=["embedding"])
+        if not results:
+            return None
+
+        embedding = results[0].get("embedding")
+        # Ensure it's a plain Python list of floats
+        return list(embedding) if embedding is not None else None
+    except Exception as e:
+        print(f"  [WARNING] Could not fetch embedding for bill {bill_id} from Milvus: {e}")
         return None
 
 
