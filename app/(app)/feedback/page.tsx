@@ -31,9 +31,6 @@ export default function FeedbackPage() {
         },
         body: JSON.stringify({
           message: feedback.trim(),
-          feedback_type: "general",
-          page_url: window.location.href,
-          user_agent: navigator.userAgent,
         }),
       });
 

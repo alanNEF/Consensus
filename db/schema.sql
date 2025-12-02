@@ -54,10 +54,18 @@ CREATE TABLE IF NOT EXISTS saved_bills (
   UNIQUE(user_id, bill_id)
 );
 
+-- Feedback table for anonymous user feedback
+CREATE TABLE IF NOT EXISTS feedback (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  message TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_bills_date ON bills(date DESC);
 CREATE INDEX IF NOT EXISTS idx_bills_status ON bills(status);
 CREATE INDEX IF NOT EXISTS idx_saved_bills_user_id ON saved_bills(user_id);
+CREATE INDEX IF NOT EXISTS idx_feedback_created_at ON feedback(created_at DESC);
 
 -- Vector similarity search index (using ivfflat for pgvector)
 -- Note: Create this after inserting some data for better performance
