@@ -87,6 +87,12 @@ export default function TopNav() {
               Profile
                 </Link>
                 <Link
+                  href="/feedback"
+              className={`topNavLink ${pathname === "/feedback" ? "active" : ""}`}
+                >
+              Feedback
+                </Link>
+                <Link
                   href="/login"
               className={`topNavLink ${pathname === "/login" ? "active" : ""}`}
             >

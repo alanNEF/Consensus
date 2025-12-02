@@ -1,0 +1,170 @@
+.feedbackContainer {
+    min-height: 100vh;
+    background-color: #1a1a1a;
+    padding: 2rem 1rem;
+    box-sizing: border-box;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.feedbackContent {
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 0.5rem;
+}
+
+.feedbackHeader {
+    margin-bottom: 3rem;
+}
+
+.feedbackTitle {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 0.5rem;
+}
+
+.feedbackSubtitle {
+    font-size: 1rem;
+    color: #9f9f9f;
+}
+
+.feedbackSection {
+    background-color: #262626;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.sectionHeader {
+    margin-bottom: 1.5rem;
+}
+
+.sectionTitle {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 0.25rem;
+}
+
+.feedbackForm {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.formField {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    min-width: 0;
+}
+
+.feedbackTextarea {
+    background-color: #2b2b2b;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    color: white;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+    max-width: 100%;
+    resize: vertical;
+    min-height: 120px;
+    font-family: inherit;
+    line-height: 1.5;
+}
+
+.feedbackTextarea:focus {
+    border-color: #0474b6;
+}
+
+.feedbackTextarea:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.feedbackTextarea::placeholder {
+    color: #6a6a6a;
+}
+
+.fieldHelper {
+    color: #9f9f9f;
+    font-size: 0.875rem;
+    text-align: right;
+}
+
+.feedbackMessage {
+    padding: 0.75rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.feedbackMessage.success {
+    color: #4ade80;
+    background-color: rgba(74, 222, 128, 0.1);
+    border: 1px solid rgba(74, 222, 128, 0.2);
+}
+
+.feedbackMessage.error {
+    color: #ff4444;
+    background-color: rgba(255, 68, 68, 0.1);
+    border: 1px solid rgba(255, 68, 68, 0.2);
+}
+
+.feedbackActions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .feedbackContainer {
+        padding: 1rem 0.5rem;
+    }
+    
+    .feedbackSection {
+        padding: 1.5rem;
+    }
+    
+    .feedbackTitle {
+        font-size: 2rem;
+    }
+    
+    .sectionTitle {
+        font-size: 1.25rem;
+    }
+    
+    .feedbackTextarea {
+        font-size: 16px; /* Prevents zoom on iOS */
+        padding: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .feedbackContainer {
+        padding: 0.75rem 0.25rem;
+    }
+    
+    .feedbackSection {
+        padding: 1rem;
+    }
+    
+    .feedbackTitle {
+        font-size: 1.75rem;
+    }
+    
+    .feedbackActions {
+        justify-content: center;
+    }
+}
