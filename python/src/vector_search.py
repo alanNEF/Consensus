@@ -20,14 +20,14 @@ _cached_index_metric = None
 def search_bills_by_keywords(query: str) -> List[Dict[str, Any]]:
     """
     Search for bills using keyword matching in title and bill_text fields.
-    Uses case-insensitive word matching - bill must contain any word from the query.
+    Prioritizes exact title matches, then phrase matches, then word matches.
     
     Args:
         query: User query text to search for
     
     Returns:
         List of dictionaries containing bill_id and score for each keyword match.
-        Keyword matches get a score of 1.0 to ensure they sort first.
+        Results are sorted by match quality: exact title > phrase match > word match.
     """
     if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
         print("  [INFO] Supabase not configured, skipping keyword search")
@@ -42,50 +42,122 @@ def search_bills_by_keywords(query: str) -> List[Dict[str, Any]]:
         # Create Supabase client
         supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
         
-        # Split query into words (remove empty strings and strip whitespace)
-        words = [word.strip() for word in query.split() if word.strip()]
-        
-        if not words:
+        # Normalize query
+        query_stripped = query.strip()
+        if not query_stripped:
             return []
         
-        # Use a set to collect all matched bill IDs
-        all_matched_bill_ids = set()
+        # Dictionary to store results with their scores
+        # Key: bill_id, Value: dict with bill_id, score, distance
+        results_dict = {}
+        query_lower = query_stripped.lower()
         
-        # For each word, search in both title and bill_text fields
-        # We search each word separately and combine results (any word match is sufficient)
-        for word in words:
-            # Escape special characters for ILIKE (%, _)
-            escaped_word = word.replace('%', '\\%').replace('_', '\\_')
-            pattern = f"%{escaped_word}%"
+        # Escape special characters for ILIKE
+        escaped_query = query_stripped.replace('%', '\\%').replace('_', '\\_')
+        phrase_pattern = f"%{escaped_query}%"
+        
+        # Step 1: Check for PHRASE match in title (contains the full query)
+        # This will also catch exact matches (when phrase = exact title)
+        try:
+            phrase_results = supabase.table("bills").select("id, title").ilike("title", phrase_pattern).execute()
+            if phrase_results.data:
+                for bill in phrase_results.data:
+                    bill_id = bill["id"]
+                    title = bill.get("title", "")
+                    title_lower = title.lower()
+                    
+                    # Check if it's an exact match (case-insensitive)
+                    if title_lower == query_lower:
+                        results_dict[bill_id] = {
+                            "bill_id": bill_id,
+                            "score": 3.0,  # Highest score for exact match
+                            "distance": 0.0
+                        }
+                    # Check if title starts with query (high priority)
+                    elif title_lower.startswith(query_lower):
+                        if bill_id not in results_dict:
+                            results_dict[bill_id] = {
+                                "bill_id": bill_id,
+                                "score": 2.8,  # Very high score for starts-with match
+                                "distance": 0.0
+                            }
+                    # Regular phrase match
+                    else:
+                        if bill_id not in results_dict:
+                            results_dict[bill_id] = {
+                                "bill_id": bill_id,
+                                "score": 2.5,  # High score for phrase match
+                                "distance": 0.0
+                            }
             
-            # Search in title
-            try:
-                title_results = supabase.table("bills").select("id").ilike("title", pattern).execute()
-                if title_results.data:
-                    for bill in title_results.data:
-                        all_matched_bill_ids.add(bill["id"])
-            except Exception as e:
-                print(f"  [WARNING] Error searching title for '{word}': {e}")
+            exact_count = len([r for r in results_dict.values() if r["score"] == 3.0])
+            phrase_count = len([r for r in results_dict.values() if r["score"] >= 2.5 and r["score"] < 3.0])
+            print(f"  [INFO] Found {exact_count} exact title matches, {phrase_count} phrase matches")
+        except Exception as e:
+            print(f"  [WARNING] Error searching for phrase/exact matches: {e}")
+        
+        # Step 2: Split query into words and search for word matches
+        words = [word.strip() for word in query_stripped.split() if word.strip()]
+        
+        if words:
+            # Track bills that match multiple words (higher priority)
+            word_match_counts = {}  # bill_id -> count of matching words
             
-            # Search in bill_text
-            try:
-                text_results = supabase.table("bills").select("id").ilike("bill_text", pattern).execute()
-                if text_results.data:
-                    for bill in text_results.data:
-                        all_matched_bill_ids.add(bill["id"])
-            except Exception as e:
-                print(f"  [WARNING] Error searching bill_text for '{word}': {e}")
+            # For each word, search in title and bill_text
+            for word in words:
+                escaped_word = word.replace('%', '\\%').replace('_', '\\_')
+                word_pattern = f"%{escaped_word}%"
+                
+                # Search in title (word match)
+                try:
+                    title_results = supabase.table("bills").select("id").ilike("title", word_pattern).execute()
+                    if title_results.data:
+                        for bill in title_results.data:
+                            bill_id = bill["id"]
+                            # Only process if not already found as exact/phrase match
+                            if bill_id not in results_dict:
+                                word_match_counts[bill_id] = word_match_counts.get(bill_id, 0) + 1
+                except Exception as e:
+                    print(f"  [WARNING] Error searching title for word '{word}': {e}")
+                
+                # Search in bill_text (word match)
+                try:
+                    text_results = supabase.table("bills").select("id").ilike("bill_text", word_pattern).execute()
+                    if text_results.data:
+                        for bill in text_results.data:
+                            bill_id = bill["id"]
+                            # Only process if not already found
+                            if bill_id not in results_dict:
+                                word_match_counts[bill_id] = word_match_counts.get(bill_id, 0) + 1
+                except Exception as e:
+                    print(f"  [WARNING] Error searching bill_text for word '{word}': {e}")
+            
+            # Add word matches to results with scores based on match count
+            for bill_id, match_count in word_match_counts.items():
+                # Higher score if multiple words match
+                if match_count == len(words):
+                    # All words matched - score 2.0
+                    score = 2.0
+                elif match_count >= len(words) // 2:
+                    # At least half the words matched - score 1.5
+                    score = 1.5
+                else:
+                    # Few words matched - score 1.0
+                    score = 1.0
+                
+                results_dict[bill_id] = {
+                    "bill_id": bill_id,
+                    "score": score,
+                    "distance": 0.0
+                }
+            
+            print(f"  [INFO] Found {len(word_match_counts)} additional word-based matches")
         
-        # Format results
-        keyword_results = []
-        for bill_id in all_matched_bill_ids:
-            keyword_results.append({
-                "bill_id": bill_id,
-                "score": 1.0,  # High score to ensure keyword matches sort first
-                "distance": 0.0  # Distance is 0 for exact keyword matches
-            })
+        # Convert to list and sort by score descending
+        keyword_results = list(results_dict.values())
+        keyword_results.sort(key=lambda x: x["score"], reverse=True)
         
-        print(f"  [INFO] Keyword search found {len(keyword_results)} matches in {time.time() - start:.3f}s")
+        print(f"  [INFO] Keyword search found {len(keyword_results)} total matches in {time.time() - start:.3f}s")
         return keyword_results
         
     except Exception as e:
