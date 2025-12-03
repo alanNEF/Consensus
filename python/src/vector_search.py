@@ -17,6 +17,156 @@ from vectors import (
 # Add at module level
 _cached_index_metric = None
 
+def search_bills_by_keywords(query: str) -> List[Dict[str, Any]]:
+    """
+    Search for bills using keyword matching in title and bill_text fields.
+    Prioritizes exact title matches, then phrase matches, then word matches.
+    
+    Args:
+        query: User query text to search for
+    
+    Returns:
+        List of dictionaries containing bill_id and score for each keyword match.
+        Results are sorted by match quality: exact title > phrase match > word match.
+    """
+    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        print("  [INFO] Supabase not configured, skipping keyword search")
+        return []
+    
+    try:
+        from supabase import create_client, Client
+        
+        start = time.time()
+        print(f"  [INFO] Starting keyword search for: '{query}'")
+        
+        # Create Supabase client
+        supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+        
+        # Normalize query
+        query_stripped = query.strip()
+        if not query_stripped:
+            return []
+        
+        # Dictionary to store results with their scores
+        # Key: bill_id, Value: dict with bill_id, score, distance
+        results_dict = {}
+        query_lower = query_stripped.lower()
+        
+        # Escape special characters for ILIKE
+        escaped_query = query_stripped.replace('%', '\\%').replace('_', '\\_')
+        phrase_pattern = f"%{escaped_query}%"
+        
+        # Step 1: Check for PHRASE match in title (contains the full query)
+        # This will also catch exact matches (when phrase = exact title)
+        try:
+            phrase_results = supabase.table("bills").select("id, title").ilike("title", phrase_pattern).execute()
+            if phrase_results.data:
+                for bill in phrase_results.data:
+                    bill_id = bill["id"]
+                    title = bill.get("title", "")
+                    title_lower = title.lower()
+                    
+                    # Check if it's an exact match (case-insensitive)
+                    if title_lower == query_lower:
+                        results_dict[bill_id] = {
+                            "bill_id": bill_id,
+                            "score": 3.0,  # Highest score for exact match
+                            "distance": 0.0
+                        }
+                    # Check if title starts with query (high priority)
+                    elif title_lower.startswith(query_lower):
+                        if bill_id not in results_dict:
+                            results_dict[bill_id] = {
+                                "bill_id": bill_id,
+                                "score": 2.8,  # Very high score for starts-with match
+                                "distance": 0.0
+                            }
+                    # Regular phrase match
+                    else:
+                        if bill_id not in results_dict:
+                            results_dict[bill_id] = {
+                                "bill_id": bill_id,
+                                "score": 2.5,  # High score for phrase match
+                                "distance": 0.0
+                            }
+            
+            exact_count = len([r for r in results_dict.values() if r["score"] == 3.0])
+            phrase_count = len([r for r in results_dict.values() if r["score"] >= 2.5 and r["score"] < 3.0])
+            print(f"  [INFO] Found {exact_count} exact title matches, {phrase_count} phrase matches")
+        except Exception as e:
+            print(f"  [WARNING] Error searching for phrase/exact matches: {e}")
+        
+        # Step 2: Split query into words and search for word matches
+        words = [word.strip() for word in query_stripped.split() if word.strip()]
+        
+        if words:
+            # Track bills that match multiple words (higher priority)
+            word_match_counts = {}  # bill_id -> count of matching words
+            
+            # For each word, search in title and bill_text
+            for word in words:
+                escaped_word = word.replace('%', '\\%').replace('_', '\\_')
+                word_pattern = f"%{escaped_word}%"
+                
+                # Search in title (word match)
+                try:
+                    title_results = supabase.table("bills").select("id").ilike("title", word_pattern).execute()
+                    if title_results.data:
+                        for bill in title_results.data:
+                            bill_id = bill["id"]
+                            # Only process if not already found as exact/phrase match
+                            if bill_id not in results_dict:
+                                word_match_counts[bill_id] = word_match_counts.get(bill_id, 0) + 1
+                except Exception as e:
+                    print(f"  [WARNING] Error searching title for word '{word}': {e}")
+                
+                # Search in bill_text (word match)
+                try:
+                    text_results = supabase.table("bills").select("id").ilike("bill_text", word_pattern).execute()
+                    if text_results.data:
+                        for bill in text_results.data:
+                            bill_id = bill["id"]
+                            # Only process if not already found
+                            if bill_id not in results_dict:
+                                word_match_counts[bill_id] = word_match_counts.get(bill_id, 0) + 1
+                except Exception as e:
+                    print(f"  [WARNING] Error searching bill_text for word '{word}': {e}")
+            
+            # Add word matches to results with scores based on match count
+            for bill_id, match_count in word_match_counts.items():
+                # Higher score if multiple words match
+                if match_count == len(words):
+                    # All words matched - score 2.0
+                    score = 2.0
+                elif match_count >= len(words) // 2:
+                    # At least half the words matched - score 1.5
+                    score = 1.5
+                else:
+                    # Few words matched - score 1.0
+                    score = 1.0
+                
+                results_dict[bill_id] = {
+                    "bill_id": bill_id,
+                    "score": score,
+                    "distance": 0.0
+                }
+            
+            print(f"  [INFO] Found {len(word_match_counts)} additional word-based matches")
+        
+        # Convert to list and sort by score descending
+        keyword_results = list(results_dict.values())
+        keyword_results.sort(key=lambda x: x["score"], reverse=True)
+        
+        print(f"  [INFO] Keyword search found {len(keyword_results)} total matches in {time.time() - start:.3f}s")
+        return keyword_results
+        
+    except Exception as e:
+        print(f"  [ERROR] Keyword search failed: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
+
+
 def search_bills(query: str, top_k: int = 10, metric: str = "L2") -> List[Dict[str, Any]]:
     """
     Search for bills using vector similarity search.
@@ -168,7 +318,8 @@ def _format_search_results_without_details(search_results: List[Dict[str, Any]])
 
 def search_bills_with_details(query: str, top_k: int = 10, metric: str = "L2") -> List[Dict[str, Any]]:
     """
-    Search for bills and return full bill details from database.
+    Search for bills using hybrid keyword + HNSW vector search.
+    Keyword matches appear first, followed by HNSW semantic matches.
     
     Args:
         query: User query text to search for
@@ -176,17 +327,46 @@ def search_bills_with_details(query: str, top_k: int = 10, metric: str = "L2") -
         metric: Similarity metric to use - "L2", "COSINE", or "IP" (default: "L2")
     
     Returns:
-        List of dictionaries containing full bill information with similarity scores
+        List of dictionaries containing full bill information with similarity scores.
+        Keyword matches are returned first, followed by HNSW matches, with deduplication.
     """
-    # Get search results from Milvus
-    search_results = search_bills(query, top_k, metric=metric)
+    start_time = time.time()
     
-    if not search_results:
+    # Step 1: Get keyword search results (exact matches in title/bill_text)
+    keyword_results = search_bills_by_keywords(query)
+    
+    # Step 2: Get HNSW vector search results (semantic similarity)
+    # Increase top_k for HNSW to account for deduplication
+    # We'll need more results since some will be filtered out
+    hnsw_results = search_bills(query, top_k=top_k * 2, metric=metric)
+    
+    # Step 3: Combine results with deduplication
+    # Collect bill IDs from keyword matches
+    keyword_bill_ids = {result["bill_id"] for result in keyword_results}
+    
+    # Filter out HNSW results that already appear in keyword results
+    filtered_hnsw_results = [
+        result for result in hnsw_results 
+        if result["bill_id"] not in keyword_bill_ids
+    ]
+    
+    # Step 4: Combine results - keyword matches first, then HNSW matches
+    # Limit total results to top_k
+    combined_results = keyword_results + filtered_hnsw_results
+    combined_results = combined_results[:top_k]
+    
+    # Log search statistics
+    print(f"  [INFO] Hybrid search summary:")
+    print(f"    - Keyword matches: {len(keyword_results)}")
+    print(f"    - HNSW matches (after deduplication): {len(filtered_hnsw_results)}")
+    print(f"    - Total results: {len(combined_results)}")
+    print(f"    - Total search time: {time.time() - start_time:.3f}s")
+    
+    if not combined_results:
         return []
     
-    # Return formatted search results directly (skip Supabase fetch due to connection issues)
-    # The search results from Milvus contain bill IDs and similarity scores, which is sufficient
-    return _format_search_results_without_details(search_results)
+    # Return formatted search results
+    return _format_search_results_without_details(combined_results)
 
 
 if __name__ == "__main__":
