@@ -64,7 +64,7 @@ export default function BillCard({
   useEffect(() => {
     // Only fetch if neither prop is provided (parent doesn't know the status)
     if (isEndorsedProp === undefined && isOpposedProp === undefined) {
-      checkEndorsementStatus();
+    checkEndorsementStatus();
     } else {
       // Use props if provided
       if (isEndorsedProp !== undefined) {
@@ -169,7 +169,7 @@ export default function BillCard({
           if (onUnendorse) {
             onUnendorse(bill.id);
           } else {
-            await checkEndorsementStatus();
+          await checkEndorsementStatus();
           }
         }
       } catch (error: unknown) {
@@ -187,7 +187,7 @@ export default function BillCard({
           if (onEndorse) {
             onEndorse(bill.id);
           } else {
-            await checkEndorsementStatus();
+          await checkEndorsementStatus();
           }
         }
       } catch (error: unknown) {
@@ -210,7 +210,7 @@ export default function BillCard({
           if (onUnoppose) {
             onUnoppose(bill.id);
           } else {
-            await checkEndorsementStatus();
+          await checkEndorsementStatus();
           }
         }
       } catch (error: unknown) {
@@ -228,7 +228,7 @@ export default function BillCard({
           if (onOppose) {
             onOppose(bill.id);
           } else {
-            await checkEndorsementStatus();
+          await checkEndorsementStatus();
           }
         }
       } catch (error: unknown) {

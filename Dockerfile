@@ -64,10 +64,10 @@ RUN npm run build
 # We need to ensure native modules are rebuilt there for the production runtime
 # Copy package.json to standalone so npm rebuild can work
 RUN if [ -d ".next/standalone/node_modules" ] && [ -f "package.json" ]; then \
-      cp package.json .next/standalone/ && \
-      cd .next/standalone && \
-      npm rebuild bcrypt sharp --build-from-source && \
-      rm package.json package-lock.json 2>/dev/null || true; \
+    cp package.json .next/standalone/ && \
+    cd .next/standalone && \
+    npm rebuild bcrypt sharp --build-from-source && \
+    rm package.json package-lock.json 2>/dev/null || true; \
     fi
 
 # Production image
@@ -104,7 +104,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/python/src ./python/src
 # Copy pyproject.toml if it exists (optional - wildcard handles missing file)
 COPY --from=builder --chown=nextjs:nodejs /app/python/pyproject.toml* ./python/
 
-USER nextjs
+USER nextjs 
 
 EXPOSE 3000
 

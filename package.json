@@ -12,7 +12,9 @@
     "db:migrate": "psql $DATABASE_URL -f db/migration_add_categories.sql",
     "db:seed": "psql $DATABASE_URL -f db/seed.sql",
     "summarize:bill": "tsx --env-file=.env scripts/summarize-all-bills.ts",
-    "summarize:all": "tsx --env-file=.env scripts/summarize-all-bills.ts --all"
+    "summarize:all": "tsx --env-file=.env scripts/summarize-all-bills.ts --all",
+    "schedule:bills": "tsx --env-file=.env scripts/schedule-bills.ts",
+    "process:bills": "tsx --env-file=.env -e \"import('./lib/process_bills').then(m => m.createBillsTable())\""
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.64",
@@ -41,6 +43,7 @@
     "motion": "^12.23.24",
     "next": "^14.2.0",
     "next-auth": "^4.24.7",
+    "node-cron": "^3.0.3",
     "nodemailer": "^7.0.10",
     "openai": "^4.24.1",
     "pg": "^8.11.3",
@@ -55,6 +58,7 @@
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/node": "^20.11.0",
+    "@types/node-cron": "^3.0.11",
     "@types/pg": "^8.10.9",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
