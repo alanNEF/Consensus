@@ -9,7 +9,7 @@ import os
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Set
 import json
 
 # Add parent directory to path for imports
@@ -195,19 +195,81 @@ def get_milvus_connection():
         # Connect to Milvus - support both traditional (host/port) and serverless (URI) connections
         if MILVUS_URI:
             # Serverless/Cloud connection (e.g., Zilliz Cloud)
+            # Prepare URI - ensure it has a port if missing
+            uri = MILVUS_URI.strip()
+            
+            # Note: Both .serverless. and .api. formats are valid depending on cluster type
+            # Keep the original format from the user's configuration
+            
+            if uri.startswith("https://") and ":" not in uri.split("//")[1]:
+                # Add default port 443 for HTTPS if not specified
+                uri = f"{uri}:443"
+            
             connection_params = {
                 "alias": "default",
-                "uri": MILVUS_URI,
+                "uri": uri,
             }
             # Add authentication if provided
+            # For Zilliz Cloud: token can be either API key OR "username:password" format
+            has_auth = False
             if MILVUS_TOKEN:
                 connection_params["token"] = MILVUS_TOKEN
+                has_auth = True
             elif MILVUS_USER and MILVUS_PASSWORD:
-                connection_params["user"] = MILVUS_USER
-                connection_params["password"] = MILVUS_PASSWORD
+                # For Zilliz Cloud serverless, combine username:password as token
+                connection_params["token"] = f"{MILVUS_USER}:{MILVUS_PASSWORD}"
+                has_auth = True
             
-            print(f"  [INFO] Connecting to Milvus serverless at: {MILVUS_URI}")
-            connections.connect(**connection_params)
+            if not has_auth:
+                print(f"  [WARNING] No authentication provided for Zilliz Cloud connection")
+                print(f"  [WARNING] Zilliz Cloud requires either MILVUS_TOKEN (API key) or MILVUS_USER/MILVUS_PASSWORD")
+                print(f"  [WARNING] For username/password, they will be combined as 'username:password'")
+            
+            print(f"  [INFO] Connecting to Milvus serverless at: {uri}")
+            if has_auth:
+                auth_type = "API key" if MILVUS_TOKEN else "username:password"
+                print(f"  [INFO] Using authentication: {auth_type}")
+            
+            # Try connecting with the URI
+            # First try with connections.connect (legacy API)
+            try:
+                connections.connect(**connection_params)
+            except Exception as first_error:
+                # If that fails, try MilvusClient (recommended for serverless)
+                error_str = str(first_error)
+                if "STOPPED" in error_str or "cluster status" in error_str:
+                    # Cluster is stopped - provide helpful message
+                    print(f"  [ERROR] Cluster appears to be STOPPED")
+                    print(f"  [INFO] Please start your cluster in Zilliz Cloud Console")
+                    raise first_error
+                
+                print(f"  [INFO] connections.connect() failed, trying MilvusClient...")
+                try:
+                    from pymilvus import MilvusClient
+                    # MilvusClient works better with serverless clusters
+                    client = MilvusClient(
+                        uri=uri,
+                        token=connection_params["token"]
+                    )
+                    # Test connection by listing collections
+                    client.list_collections()
+                    # If successful, we still need to use connections API for compatibility
+                    # Close the client and try connections.connect again
+                    client.close()
+                    # Retry connections.connect - sometimes MilvusClient "wakes up" the cluster
+                    connections.connect(**connection_params)
+                except Exception as second_error:
+                    # If connection fails and URI doesn't have port, try without port modification
+                    if ":443" in uri and uri.endswith(":443"):
+                        print(f"  [INFO] Connection with port 443 failed, trying original URI format...")
+                        connection_params["uri"] = MILVUS_URI.strip()
+                        try:
+                            connections.connect(**connection_params)
+                        except Exception:
+                            # Re-raise the original error with better context
+                            raise first_error
+                    else:
+                        raise first_error
         else:
             # Traditional host/port connection
             print(f"  [INFO] Connecting to Milvus at: {MILVUS_HOST}:{MILVUS_PORT}")
@@ -224,6 +286,12 @@ def get_milvus_connection():
         print(f"  [ERROR] Failed to connect to Milvus: {e}")
         if MILVUS_URI:
             print(f"  [DEBUG] URI: {MILVUS_URI}")
+            print(f"  [DEBUG] Has MILVUS_TOKEN: {bool(MILVUS_TOKEN)}")
+            print(f"  [DEBUG] Has MILVUS_USER: {bool(MILVUS_USER)}")
+            print(f"  [DEBUG] Has MILVUS_PASSWORD: {bool(MILVUS_PASSWORD)}")
+            if not MILVUS_TOKEN and not (MILVUS_USER and MILVUS_PASSWORD):
+                print(f"  [HELP] Zilliz Cloud requires authentication!")
+                print(f"  [HELP] Set either MILVUS_TOKEN or both MILVUS_USER and MILVUS_PASSWORD in your .env file")
         else:
             print(f"  [DEBUG] Host: {MILVUS_HOST}, Port: {MILVUS_PORT}")
         return False
@@ -628,6 +696,256 @@ def get_milvus_collection():
     except Exception as e:
         print(f"  [ERROR] Failed to get Milvus collection: {e}")
         return None
+
+
+def process_single_bill(bill_id: str, verbose: bool = True) -> bool:
+    """
+    Process a single bill: fetch from database, generate embedding, and add to Milvus.
+    
+    Args:
+        bill_id: The ID of the bill to process
+        verbose: Whether to print progress messages
+    
+    Returns:
+        True if successful, False otherwise
+    """
+    if verbose:
+        print(f"Processing bill: {bill_id}")
+    
+    # Fetch bill from database
+    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        if verbose:
+            print(f"  [ERROR] Supabase not configured")
+        return False
+    
+    try:
+        from supabase import create_client, Client
+        supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+        
+        result = supabase.table("bills").select("*").eq("id", bill_id).limit(1).execute()
+        
+        if not result.data or len(result.data) == 0:
+            if verbose:
+                print(f"  [ERROR] Bill {bill_id} not found in database")
+            return False
+        
+        bill = result.data[0]
+    except Exception as e:
+        if verbose:
+            print(f"  [ERROR] Failed to fetch bill from database: {e}")
+        return False
+    
+    # Setup Milvus collection
+    collection = setup_milvus_collection(verbose=verbose)
+    if collection is None:
+        if verbose:
+            print(f"  [ERROR] Failed to setup Milvus collection")
+        return False
+    
+    # Get bill text for embedding
+    bill_title = bill.get("title", "Unknown")
+    bill_text = bill.get("bill_text")
+    summary_text = get_bill_summary_text(bill_id)
+    
+    # Determine embedding text (same priority as ingest_bills)
+    if bill_text:
+        embedding_text = bill_text
+        if verbose:
+            print("  Using bill_text field for embedding")
+    elif summary_text:
+        embedding_text = f"{bill_title} {summary_text}"
+        if verbose:
+            print("  Using summary_text for embedding (bill_text not available)")
+    else:
+        embedding_text = f"{bill_title} {bill.get('summary_key', '')}".strip()
+        if not embedding_text:
+            embedding_text = bill_title
+        if verbose:
+            print("  Using title + summary_key for embedding (bill_text and summary not available)")
+    
+    # Generate embedding
+    if verbose:
+        print("  Generating embedding...")
+    try:
+        embedding = generate_embedding(embedding_text)
+        if verbose:
+            print(f"  Embedding dimension: {len(embedding)}")
+    except Exception as e:
+        if verbose:
+            print(f"  [ERROR] Failed to generate embedding: {e}")
+        return False
+    
+    # Upsert to Milvus
+    if verbose:
+        print("  Storing embedding in Milvus...")
+    success = upsert_bill_embedding_milvus(bill_id, embedding, collection=collection)
+    
+    if success:
+        if verbose:
+            print(f"  Successfully processed {bill_id}")
+        return True
+    else:
+        if verbose:
+            print(f"  [ERROR] Failed to store embedding for {bill_id}")
+        return False
+
+
+def process_bills(bill_ids: List[str], verbose: bool = True) -> Dict[str, bool]:
+    """
+    Process multiple bills and add their embeddings to Milvus.
+    
+    Args:
+        bill_ids: List of bill IDs to process
+        verbose: Whether to print progress messages
+    
+    Returns:
+        Dictionary mapping bill_id to success status (True/False)
+    """
+    results = {}
+    
+    # Setup Milvus collection once for all bills
+    collection = setup_milvus_collection(verbose=verbose)
+    if collection is None:
+        if verbose:
+            print("  [ERROR] Failed to setup Milvus collection")
+        return {bill_id: False for bill_id in bill_ids}
+    
+    for bill_id in bill_ids:
+        results[bill_id] = process_single_bill(bill_id, verbose=verbose)
+        if verbose:
+            print()
+    
+    return results
+
+
+def get_bills_in_milvus() -> Set[str]:
+    """
+    Get set of all bill IDs that currently have embeddings in Milvus.
+    
+    Returns:
+        Set of bill IDs
+    """
+    try:
+        from pymilvus import Collection, utility
+        
+        # Ensure connection
+        if not get_milvus_connection():
+            return set()
+        
+        # Check if collection exists
+        if not utility.has_collection(MILVUS_COLLECTION_NAME):
+            return set()
+        
+        collection = Collection(MILVUS_COLLECTION_NAME)
+        collection.load()
+        
+        # Query all bill_ids (using expr="*" to get all)
+        # Note: We need to use a valid expression, so we'll query with a condition that matches all
+        # Since bill_id is VARCHAR, we can use a range query or just query all
+        try:
+            # Get all entities - use a query that matches everything
+            # For VARCHAR fields, we can use a pattern or just iterate
+            # The simplest approach: query with no filter (but pymilvus requires expr)
+            # We'll use a query that should match all: bill_id != "" (which should match all)
+            results = collection.query(
+                expr='bill_id != ""',
+                output_fields=["bill_id"]
+            )
+            
+            bill_ids = {item["bill_id"] for item in results}
+            return bill_ids
+        except Exception as e:
+            # Fallback: if query fails, return empty set
+            print(f"  [WARNING] Could not query Milvus for bill IDs: {e}")
+            return set()
+            
+    except Exception as e:
+        print(f"  [WARNING] Could not get bills from Milvus: {e}")
+        return set()
+
+
+def get_bills_needing_embeddings(limit: Optional[int] = None) -> List[str]:
+    """
+    Find bills in the database that don't have embeddings in Milvus yet.
+    
+    Args:
+        limit: Maximum number of bill IDs to return (None for all)
+    
+    Returns:
+        List of bill IDs that need embeddings
+    """
+    # Get all bills from database
+    all_bills = get_bills_from_database(limit=None)
+    database_bill_ids = {bill.get("id") for bill in all_bills if bill.get("id")}
+    
+    # Get bills that already have embeddings
+    milvus_bill_ids = get_bills_in_milvus()
+    
+    # Find bills that need embeddings
+    needing_embeddings = list(database_bill_ids - milvus_bill_ids)
+    
+    if limit:
+        needing_embeddings = needing_embeddings[:limit]
+    
+    return needing_embeddings
+
+
+def sync_new_bills(limit: Optional[int] = None, verbose: bool = True) -> Dict[str, Any]:
+    """
+    Sync new bills: find bills in database without embeddings and process them.
+    
+    Args:
+        limit: Maximum number of bills to process in this sync (None for all)
+        verbose: Whether to print progress messages
+    
+    Returns:
+        Dictionary with sync results: {
+            "processed": int,
+            "successful": int,
+            "failed": int,
+            "results": Dict[str, bool]
+        }
+    """
+    if verbose:
+        print("Syncing new bills...")
+        print()
+    
+    # Find bills that need embeddings
+    if verbose:
+        print("Finding bills that need embeddings...")
+    bill_ids = get_bills_needing_embeddings(limit=limit)
+    
+    if not bill_ids:
+        if verbose:
+            print("No bills need embeddings. All bills are up to date.")
+        return {
+            "processed": 0,
+            "successful": 0,
+            "failed": 0,
+            "results": {}
+        }
+    
+    if verbose:
+        print(f"Found {len(bill_ids)} bill(s) that need embeddings")
+        print()
+    
+    # Process all bills
+    results = process_bills(bill_ids, verbose=verbose)
+    
+    # Count successes and failures
+    successful = sum(1 for success in results.values() if success)
+    failed = len(results) - successful
+    
+    if verbose:
+        print(f"Sync complete: {successful} successful, {failed} failed")
+        print()
+    
+    return {
+        "processed": len(bill_ids),
+        "successful": successful,
+        "failed": failed,
+        "results": results
+    }
 
 
 if __name__ == "__main__":

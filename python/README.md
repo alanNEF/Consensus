@@ -109,18 +109,105 @@ Generate embeddings for bills and store them in Supabase:
 
 ```bash
 # Using Poetry
-poetry run python src/ingest.py
+poetry run python src/vectors.py
 
 # Using pip/venv
-python src/ingest.py
+python src/vectors.py
 ```
 
 This will:
-1. Fetch bills (currently using mock data)
-2. Classify bills into categories using zero-shot classification
-3. Generate embeddings using sentence-transformers
-4. Store bill metadata and categories in Supabase (SQL database)
-5. Store embeddings in Milvus (vector database)
+1. Fetch bills from the Supabase database
+2. Generate embeddings using sentence-transformers
+3. Store embeddings in Milvus (vector database)
+
+**Note:** This processes all bills. Use `--force-recreate` to recreate all embeddings.
+
+### Sync New Bills Automatically
+
+The system can automatically detect and process new bills that don't have embeddings yet.
+
+#### Option 1: Background Sync Service (Recommended)
+
+Run a continuous background service that periodically checks for new bills:
+
+```bash
+# Run continuously, checking every 5 minutes (default)
+poetry run python src/sync_service.py
+
+# Custom interval (e.g., every 10 minutes = 600 seconds)
+poetry run python src/sync_service.py --interval 600
+
+# Process only first 50 bills per sync
+poetry run python src/sync_service.py --limit 50
+
+# Run once and exit
+poetry run python src/sync_service.py --once
+
+# Check status (how many bills need embeddings)
+poetry run python src/sync_service.py --status
+```
+
+#### Option 2: API Endpoint
+
+The embedding service exposes a `/sync` endpoint that can be called via HTTP:
+
+```bash
+# Sync all new bills
+curl -X POST http://localhost:5001/sync
+
+# Sync with limit
+curl -X POST http://localhost:5001/sync \
+  -H "Content-Type: application/json" \
+  -d '{"limit": 100}'
+
+# Process specific bills
+curl -X POST http://localhost:5001/sync \
+  -H "Content-Type: application/json" \
+  -d '{"bill_ids": ["hr1234-118", "s5678-118"]}'
+
+# Check status
+curl http://localhost:5001/sync/status
+```
+
+#### Option 3: Next.js API Endpoint
+
+Call the Next.js API endpoint from your application:
+
+```typescript
+// Sync all new bills
+await fetch('/api/bills/sync-embeddings', { method: 'POST' });
+
+// Sync specific bills
+await fetch('/api/bills/sync-embeddings', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ bill_ids: ['hr1234-118'] })
+});
+
+// Check status
+const status = await fetch('/api/bills/sync-embeddings').then(r => r.json());
+```
+
+#### Option 4: Process Individual Bills
+
+Process a single bill programmatically:
+
+```python
+from vectors import process_single_bill
+
+# Process a single bill
+success = process_single_bill("hr1234-118", verbose=True)
+```
+
+### Process Multiple Bills
+
+```python
+from vectors import process_bills
+
+# Process multiple bills
+results = process_bills(["hr1234-118", "s5678-118"], verbose=True)
+# Returns: {"hr1234-118": True, "s5678-118": False}
+```
 
 ### Recommend Bills
 
@@ -197,12 +284,60 @@ black src/
 ruff check src/
 ```
 
+## Automatic Embedding Generation
+
+When new bills are added to the Supabase database, you have several options to ensure their embeddings are generated:
+
+1. **Background Service**: Run `sync_service.py` as a background process (recommended for production)
+2. **API Call**: Call the `/sync` endpoint when bills are inserted
+3. **Manual Sync**: Run `sync_service.py --once` periodically via cron
+4. **On-Demand**: Call the API endpoint from your application when bills are created
+
+### Setting Up Automatic Syncing
+
+#### Using systemd (Linux)
+
+Create `/etc/systemd/system/bill-sync.service`:
+
+```ini
+[Unit]
+Description=Bill Embedding Sync Service
+After=network.target
+
+[Service]
+Type=simple
+User=your-user
+WorkingDirectory=/path/to/Consensus/python
+Environment="PATH=/path/to/venv/bin"
+ExecStart=/path/to/venv/bin/python src/sync_service.py --interval 300
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Then:
+```bash
+sudo systemctl enable bill-sync
+sudo systemctl start bill-sync
+```
+
+#### Using cron
+
+Add to crontab (`crontab -e`):
+```bash
+# Check for new bills every 5 minutes
+*/5 * * * * cd /path/to/Consensus/python && /path/to/venv/bin/python src/sync_service.py --once --quiet
+```
+
 ## TODO
 
 - [ ] Implement actual Congress.gov API integration in `ingest.py`
 - [ ] Implement vector similarity search using Supabase RPC in `recommend.py`
 - [ ] Add user preference-based recommendations
-- [ ] Add batch processing for large numbers of bills
+- [x] Add batch processing for large numbers of bills
+- [x] Add automatic syncing for new bills
 - [ ] Add error handling and retry logic
 - [ ] Add logging and monitoring
 
